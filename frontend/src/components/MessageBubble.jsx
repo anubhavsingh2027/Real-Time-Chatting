@@ -257,8 +257,8 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
             )}
 
             {message.text && (
-              <div className="text-sm leading-5 break-words whitespace-pre-wrap">
-                <span className="block">{message.text}</span>
+              <div className="text-sm leading-relaxed break-words whitespace-pre-wrap font-normal overflow-hidden">
+                {message.text}
               </div>
             )}
 

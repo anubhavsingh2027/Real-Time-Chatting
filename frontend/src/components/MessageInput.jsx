@@ -33,7 +33,7 @@ function MessageInput() {
 
           try {
             await sendMessage({
-              text: text.trim(),
+              text: text,
               image: img.data,
             });
 
@@ -53,7 +53,7 @@ function MessageInput() {
     } else {
       // Send text-only message
       await sendMessage({
-        text: text.trim(),
+        text: text,
         image: null,
       });
     }
@@ -196,8 +196,7 @@ function MessageInput() {
           </button>
 
           <div className="flex-1 relative">
-            <input
-              type="text"
+            <textarea
               value={text}
               onChange={(e) => {
                 setText(e.target.value);
@@ -209,12 +208,13 @@ function MessageInput() {
                   handleSendMessage(e);
                 }
               }}
-              className="w-full bg-gray-100 dark:bg-slate-800 rounded-full py-3 px-4 pr-12 text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-gray-500 dark:placeholder:text-slate-400"
+              className="w-full bg-gray-100 dark:bg-slate-800 rounded-2xl py-3 px-4 pr-12 text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-gray-500 dark:placeholder:text-slate-400 resize-none min-h-12 max-h-32 font-normal whitespace-pre-wrap"
               placeholder={
                 imagePreviews.length > 0
                   ? "Add a caption (optional)..."
                   : "Type a message..."
               }
+              rows="1"
             />
 
             {imagePreviews.length > 0 && (
