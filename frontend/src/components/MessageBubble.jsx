@@ -270,8 +270,8 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={`text-xs font-semibold px-3 py-1 rounded-md transition-colors ${
                       isOwnMessage
-                        ? 'bg-emerald-600/30 hover:bg-emerald-600/50 text-white'
-                        : 'bg-slate-600/30 hover:bg-slate-600/50 text-slate-100'
+                        ? 'bg-emerald-600/30 hover:bg-emerald-600/50 text-red-500'
+                        : 'bg-slate-600/30 hover:bg-slate-600/50 text-red-500'
                     }`}
                   >
                     {isExpanded ? '▲ Show Less' : '▼ Read More'}
