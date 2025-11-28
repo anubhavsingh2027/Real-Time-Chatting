@@ -20,6 +20,7 @@ function ChatContainer({ onBack }) {
     deleteMessage,
     setReplyToMessage,
     setForwardMessage,
+    clearUnreadCount,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
@@ -27,10 +28,12 @@ function ChatContainer({ onBack }) {
   useEffect(() => {
     getMessagesByUserId(selectedUser._id);
     subscribeToMessages();
+    // Clear unread count when opening chat
+    clearUnreadCount(selectedUser._id);
 
     // clean up
     return () => unsubscribeFromMessages();
-  }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages]);
+  }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages, clearUnreadCount]);
 
   // Scroll to bottom when messages load
   useEffect(() => {

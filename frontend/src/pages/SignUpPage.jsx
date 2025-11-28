@@ -1,16 +1,25 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import BorderAnimatedContainer from "../components/BorderAnimatedContainer";
-import { MessageCircleIcon, LockIcon, MailIcon, UserIcon, LoaderIcon } from "lucide-react";
+import { MessageCircleIcon, LockIcon, MailIcon, UserIcon, LoaderIcon, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function SignUpPage() {
-  const [formData, setFormData] = useState({ fullName: "", email: "", password: "" });
+  const [formData, setFormData] = useState({ fullName: "", username: "", email: "", password: "" });
   const { signup, isSigningUp } = useAuthStore();
+
+  // Generate normalized username (lowercase, no spaces)
+  const normalizedUsername = formData.username
+    .replace(/\s+/g, '')
+    .toLowerCase();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    signup(formData);
+    if (!normalizedUsername) {
+      alert("Please enter a username");
+      return;
+    }
+    signup({ ...formData, username: normalizedUsername });
   };
 
   return (
@@ -44,6 +53,35 @@ function SignUpPage() {
                         placeholder="John Doe"
                       />
                     </div>
+                  </div>
+
+                  {/* USERNAME */}
+                  <div>
+                    <label className="auth-input-label">Username</label>
+                    <div className="relative">
+                      <UserIcon className="auth-input-icon" />
+
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        className="input"
+                        placeholder="johndoe"
+                      />
+                    </div>
+
+                    {/* Username Preview */}
+                    {formData.username && (
+                      <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-start gap-2">
+                        <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs text-blue-300 font-medium mb-1">Your username will be:</p>
+                          <p className="text-sm font-mono font-bold text-blue-400 break-all">
+                            {normalizedUsername}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* EMAIL INPUT */}

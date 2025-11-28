@@ -5,8 +5,8 @@ import { io } from "socket.io-client";
 
 const BASE_URL =
   import.meta.env.MODE === "development"
-    ? "https://app.chatting.nav-code.com"
-    : "https://app.chatting.nav-code.com";
+    ? "https://careful-jayme-psit-84f63ed1.koyeb.app"
+    : "https://careful-jayme-psit-84f63ed1.koyeb.app";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -22,7 +22,6 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: res.data });
       get().connectSocket();
     } catch (error) {
-      console.log("Error in authCheck:", error);
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -68,7 +67,6 @@ export const useAuthStore = create((set, get) => ({
       get().disconnectSocket();
     } catch (error) {
       toast.error("Error logging out");
-      console.log("Logout error:", error);
     }
   },
 
@@ -78,7 +76,6 @@ export const useAuthStore = create((set, get) => ({
       set({ authUser: res.data });
       toast.success("Profile updated successfully");
     } catch (error) {
-      console.log("Error in update profile:", error);
       toast.error(error.response.data.message);
     }
   },

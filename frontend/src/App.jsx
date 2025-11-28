@@ -7,6 +7,7 @@ import { useAuthStore } from "./store/useAuthStore";
 import { useEffect } from "react";
 import PageLoader from "./components/PageLoader";
 import useSettingsStore from "./store/useSettingsStore";
+import MessageNotification from "./components/MessageNotification";
 
 import { Toaster } from "react-hot-toast";
 
@@ -39,6 +40,7 @@ function App() {
         <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to={"/"} />} />
       </Routes>
 
+      <MessageNotification />
       <Toaster />
     </div>
   );

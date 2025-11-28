@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -14,9 +14,14 @@ import NoConversationPlaceholder from "../components/NoConversationPlaceholder";
 
 function ChatPage() {
   const navigate = useNavigate();
-  const { activeTab, selectedUser, setSelectedUser } = useChatStore();
+  const { activeTab, selectedUser, setSelectedUser, subscribeToGlobalMessages } = useChatStore();
   const { authUser } = useAuthStore();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+  // Subscribe to global messages on mount
+  useEffect(() => {
+    subscribeToGlobalMessages();
+  }, [subscribeToGlobalMessages]);
 
   const handleBack = () => {
     setSelectedUser(null);

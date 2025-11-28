@@ -47,6 +47,7 @@ export const useChatStore = create(
       chats: [],
       messages: [],
       messageStatuses: {}, // tracks status of each message
+      unreadCounts: {}, // tracks unread count per chat (userId -> count)
       activeTab: "chats",
       selectedUser: null,
       selectedMessage: null,
@@ -261,6 +262,165 @@ export const useChatStore = create(
         }
       },
 
+      // Helper: Increment unread count for a chat
+      incrementUnreadCount: (userId) => {
+        set((state) => ({
+          unreadCounts: {
+            ...state.unreadCounts,
+            [userId]: (state.unreadCounts[userId] || 0) + 1,
+          },
+        }));
+      },
+
+      // Helper: Clear unread count for a chat
+      clearUnreadCount: (userId) => {
+        set((state) => ({
+          unreadCounts: {
+            ...state.unreadCounts,
+            [userId]: 0,
+          },
+        }));
+      },
+
+      // Global subscription for messageReceived (chat list updates + notifications)
+      // This should ALWAYS be active, regardless of selectedUser
+      subscribeToGlobalMessages: () => {
+        const socket = useAuthStore.getState().socket;
+        if (!socket) return;
+
+
+
+        // Remove any existing global listeners to prevent duplicates
+        socket.off("chat_list_update");
+        socket.off("notification_alert");
+        socket.off("messageReceived"); // Keep for backwards compatibility
+
+        // ============ MAIN EVENT: chat_list_update ============
+        // This updates the sidebar in real-time whenever a new message arrives
+        socket.on("chat_list_update", (data) => {
+          const {
+            senderId,
+            senderInfo,
+            lastMessage,
+            lastMessagePreview,
+            timestamp,
+            unreadCount,
+          } = data;
+          const { selectedUser } = get();
+          const { chats } = get();
+
+          // Check if this conversation already exists in chat list
+          const existingChatIndex = chats.findIndex(
+            (chat) => chat._id === senderId
+          );
+
+          if (existingChatIndex > -1) {
+            // Update existing chat - move to top and update last message
+            set((state) => {
+              const updatedChats = [...state.chats];
+              updatedChats[existingChatIndex] = {
+                ...updatedChats[existingChatIndex],
+                lastMessage: lastMessage,
+                lastMessagePreview: lastMessagePreview,
+                updatedAt: timestamp,
+              };
+              // Move to top
+              const [chat] = updatedChats.splice(existingChatIndex, 1);
+              return { chats: [chat, ...updatedChats] };
+            });
+
+            // If not currently viewing this chat, increment unread count
+            if (selectedUser?._id !== senderId) {
+              get().incrementUnreadCount(senderId);
+            }
+          } else {
+            // Add new chat to the top
+            set((state) => ({
+              chats: [
+                {
+                  _id: senderId,
+                  fullName: senderInfo.fullName,
+                  username: senderInfo.username,
+                  profilePic: senderInfo.profilePic,
+                  lastMessage: lastMessage,
+                  lastMessagePreview: lastMessagePreview,
+                  updatedAt: timestamp,
+                },
+                ...state.chats,
+              ],
+            }));
+
+            // Increment unread count for new chat
+            get().incrementUnreadCount(senderId);
+          }
+        });
+
+        // ============ SECONDARY EVENT: notification_alert ============
+        // This triggers toast notifications for new messages
+        socket.on("notification_alert", (data) => {
+          const { type, senderInfo, messagePreview, senderId } = data;
+          const { selectedUser } = get();
+
+          // Only show notification if not currently chatting with this user
+          if (selectedUser?._id !== senderId) {
+
+            if (window._handleMessageNotification) {
+              window._handleMessageNotification({
+                senderInfo,
+                message: { text: messagePreview },
+              });
+            }
+          }
+        });
+
+        // ============ BACKWARDS COMPATIBILITY: messageReceived ============
+        // Keep this for any old events that might still be sent
+        socket.on("messageReceived", (data) => {
+          const { senderId, senderInfo, message } = data;
+          const { selectedUser } = get();
+          const { chats } = get();
+
+          const existingChatIndex = chats.findIndex(
+            (chat) => chat._id === senderId
+          );
+
+          if (existingChatIndex > -1) {
+            set((state) => {
+              const updatedChats = [...state.chats];
+              updatedChats[existingChatIndex] = {
+                ...updatedChats[existingChatIndex],
+                lastMessage: message,
+              };
+              const [chat] = updatedChats.splice(existingChatIndex, 1);
+              return { chats: [chat, ...updatedChats] };
+            });
+          } else {
+            set((state) => ({
+              chats: [
+                {
+                  _id: senderId,
+                  fullName: senderInfo.fullName,
+                  username: senderInfo.username,
+                  profilePic: senderInfo.profilePic,
+                  lastMessage: message,
+                },
+                ...state.chats,
+              ],
+            }));
+          }
+
+          if (selectedUser?._id !== senderId) {
+            if (window._handleMessageNotification) {
+              window._handleMessageNotification({
+                senderInfo,
+                message,
+              });
+            }
+          }
+        });
+      },
+
+      // Chat-specific subscription (for active conversation messages)
       subscribeToMessages: () => {
         const { selectedUser } = get();
         const { soundEffects } = useSettingsStore.getState();
@@ -269,11 +429,13 @@ export const useChatStore = create(
         const socket = useAuthStore.getState().socket;
         if (!socket) return;
 
-        // Remove any existing listeners
+        // Remove any existing listeners for current chat
         socket.off("newMessage");
         socket.off("messageDeleted");
+        socket.off("messageReaction");
+        socket.off("messageReactionRemoved");
+        socket.off("messageStatus");
 
-        // Add new message listener
         // Listen for message status updates
         socket.on("messageStatus", ({ messageId, status }) => {
           get().updateMessageStatus(messageId, status);
@@ -284,12 +446,26 @@ export const useChatStore = create(
           const newMessage = data.message || data;
           const { authUser } = useAuthStore.getState();
 
+          // Convert IDs to strings for comparison
+          const senderIdStr =
+            typeof newMessage.senderId === "object"
+              ? newMessage.senderId?._id?.toString() ||
+                newMessage.senderId?.toString()
+              : newMessage.senderId?.toString();
+          const receiverIdStr =
+            typeof newMessage.receiverId === "object"
+              ? newMessage.receiverId?._id?.toString() ||
+                newMessage.receiverId?.toString()
+              : newMessage.receiverId?.toString();
+          const selectedUserIdStr = selectedUser._id?.toString();
+          const authUserIdStr = authUser._id?.toString();
+
           // Only process messages relevant to the current chat
           const isRelevantMessage =
-            (newMessage.senderId === selectedUser._id &&
-              newMessage.receiverId === authUser._id) ||
-            (newMessage.senderId === authUser._id &&
-              newMessage.receiverId === selectedUser._id);
+            (senderIdStr === selectedUserIdStr &&
+              receiverIdStr === authUserIdStr) ||
+            (senderIdStr === authUserIdStr &&
+              receiverIdStr === selectedUserIdStr);
 
           if (!isRelevantMessage) return;
 
@@ -306,7 +482,7 @@ export const useChatStore = create(
             if (messageExists) return state;
 
             // Play sound for incoming messages from other users
-            if (soundEffects && newMessage.senderId === selectedUser._id) {
+            if (soundEffects && senderIdStr === selectedUserIdStr) {
               const notificationSound = new Audio("/sounds/notification.mp3");
               notificationSound.currentTime = 0;
               notificationSound.play().catch(() => {});
@@ -363,6 +539,8 @@ export const useChatStore = create(
 
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
+        // Only unsubscribe from chat-specific listeners
+        // Keep chat_list_update and notification_alert active for global chat list updates
         socket.off("newMessage");
         socket.off("messageStatus");
         socket.off("messageDeleted");

@@ -6,16 +6,24 @@ import { useAuthStore } from "../store/useAuthStore";
 import SearchInput from "./SearchInput";
 import { smartNameSearch } from "../lib/searchUtils";
 import { ChevronDown } from "lucide-react";
+import ProfileModal from "./ProfileModal";
 
 function ChatsList() {
-  const { getMyChatPartners, chats, isUsersLoading, setSelectedUser } = useChatStore();
+  const { getMyChatPartners, chats, isUsersLoading, setSelectedUser, unreadCounts, clearUnreadCount } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedMessageId, setExpandedMessageId] = useState(null);
+  const [selectedProfile, setSelectedProfile] = useState(null);
 
   useEffect(() => {
     getMyChatPartners();
   }, [getMyChatPartners]);
+
+  const handleSelectChat = (chat) => {
+    // Clear unread count when opening chat
+    clearUnreadCount(chat._id);
+    setSelectedUser(chat);
+  };
 
   const filteredChats = useMemo(() => {
     if (!searchQuery.trim()) return chats;
@@ -58,17 +66,28 @@ function ChatsList() {
               <div
                 key={chat._id}
                 className="bg-gray-100 dark:bg-cyan-500/10 p-4 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-cyan-500/20 transition-colors"
-                onClick={() => setSelectedUser(chat)}
+                onClick={() => handleSelectChat(chat)}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <div className={`avatar ${onlineUsers.includes(chat._id) ? "online" : "offline"}`}>
+                  <div
+                    className={`avatar ${onlineUsers.includes(chat._id) ? "online" : "offline"} cursor-pointer hover:opacity-75 transition-opacity`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProfile(chat);
+                    }}
+                  >
                     <div className="size-12 rounded-full">
                       <img src={chat.profilePic || "/avatar.png"} alt={chat.fullName} />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-black dark:text-slate-200 font-medium truncate">{chat.fullName}</h4>
+                    <h4 className="text-black dark:text-slate-200 font-medium truncate">@{chat.username}</h4>
                   </div>
+                  {unreadCounts[chat._id] > 0 && (
+                    <div className="flex-shrink-0 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                      {unreadCounts[chat._id] > 99 ? "99+" : unreadCounts[chat._id]}
+                    </div>
+                  )}
                 </div>
 
                 {lastMessage && (
@@ -106,6 +125,11 @@ function ChatsList() {
           })}
         </div>
       )}
+      <ProfileModal
+        isOpen={selectedProfile !== null}
+        onClose={() => setSelectedProfile(null)}
+        user={selectedProfile}
+      />
     </>
   );
 }

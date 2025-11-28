@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import ConfirmDialog from "./ConfirmDialog";
 import MessageViewerModal from "./MessageViewerModal";
+import ProfileModal from "./ProfileModal";
 
 function ChatHeader({ onBack }) {
   const { selectedUser, setSelectedUser, selectedMessage, setSelectedMessage, deleteMessage } = useChatStore();
@@ -15,6 +16,7 @@ function ChatHeader({ onBack }) {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFullMessage, setShowFullMessage] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
 
   const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢'];
 
@@ -203,7 +205,7 @@ function ChatHeader({ onBack }) {
             <ArrowLeft className="w-6 h-6" />
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer hover:opacity-75 transition-opacity" onClick={() => setShowProfile(true)}>
             <div className="w-10 h-10 rounded-full overflow-hidden">
               <img
                 src={selectedUser.profilePic || "/avatar.png"}
@@ -213,7 +215,7 @@ function ChatHeader({ onBack }) {
             </div>
 
             <div>
-              <h3 className="text-black dark:text-white font-medium leading-tight">{selectedUser.fullName}</h3>
+              <h3 className="text-black dark:text-white font-medium leading-tight">@{selectedUser.username}</h3>
               <p className="text-gray-500 dark:text-slate-300 text-sm leading-tight">
                 {isOnline ? "Online" : "Offline"}
               </p>
@@ -230,6 +232,12 @@ function ChatHeader({ onBack }) {
         onCopy={handleCopyMessage}
         onDownload={() => handleDownloadImage(selectedMessage.image)}
         onDelete={() => setShowDeleteConfirm(true)}
+      />
+
+      <ProfileModal
+        isOpen={showProfile}
+        onClose={() => setShowProfile(false)}
+        user={selectedUser}
       />
 
       <ConfirmDialog

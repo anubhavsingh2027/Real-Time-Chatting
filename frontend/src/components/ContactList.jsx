@@ -4,11 +4,13 @@ import UsersLoadingSkeleton from "./UsersLoadingSkeleton";
 import { useAuthStore } from "../store/useAuthStore";
 import SearchInput from "./SearchInput";
 import { smartNameSearch } from "../lib/searchUtils";
+import ProfileModal from "./ProfileModal";
 
 function ContactList() {
   const { getAllContacts, allContacts, setSelectedUser, isUsersLoading } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProfile, setSelectedProfile] = useState(null);
 
   useEffect(() => {
     getAllContacts();
@@ -18,17 +20,17 @@ function ContactList() {
     if (!searchQuery.trim()) return allContacts;
 
     return allContacts
-      .filter((contact) => smartNameSearch(contact.fullName, searchQuery))
+      .filter((contact) => smartNameSearch(contact.username, searchQuery))
       .sort((a, b) => {
         // Sort exact matches first
-        const aStartsExact = a.fullName.toLowerCase().startsWith(searchQuery.toLowerCase());
-        const bStartsExact = b.fullName.toLowerCase().startsWith(searchQuery.toLowerCase());
+        const aStartsExact = a.username.toLowerCase().startsWith(searchQuery.toLowerCase());
+        const bStartsExact = b.username.toLowerCase().startsWith(searchQuery.toLowerCase());
 
         if (aStartsExact && !bStartsExact) return -1;
         if (!aStartsExact && bStartsExact) return 1;
 
         // Then sort alphabetically
-        return a.fullName.localeCompare(b.fullName);
+        return a.username.localeCompare(b.username);
       });
   }, [allContacts, searchQuery]);
 
@@ -50,17 +52,28 @@ function ContactList() {
               onClick={() => setSelectedUser(contact)}
             >
               <div className="flex items-center gap-3">
-                <div className={`avatar ${onlineUsers.includes(contact._id) ? "online" : "offline"}`}>
+                <div
+                  className={`avatar ${onlineUsers.includes(contact._id) ? "online" : "offline"} cursor-pointer hover:opacity-75 transition-opacity`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedProfile(contact);
+                  }}
+                >
                   <div className="size-12 rounded-full">
                     <img src={contact.profilePic || "/avatar.png"} />
                   </div>
                 </div>
-                <h4 className="text-black dark:text-slate-200 font-medium">{contact.fullName}</h4>
+                <h4 className="text-black dark:text-slate-200 font-medium">@{contact.username}</h4>
               </div>
             </div>
           ))}
         </div>
       )}
+      <ProfileModal
+        isOpen={selectedProfile !== null}
+        onClose={() => setSelectedProfile(null)}
+        user={selectedProfile}
+      />
     </>
   );
 }

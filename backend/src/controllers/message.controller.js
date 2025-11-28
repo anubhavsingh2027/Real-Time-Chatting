@@ -77,9 +77,52 @@ export const sendMessage = async (req, res) => {
       { path: "forwardedFrom", select: "text image senderId" },
     ]);
 
+    // Also populate sender info for the frontend
+    await newMessage.populate("senderId", "fullName username profilePic");
+    await newMessage.populate("receiverId", "fullName username profilePic");
+
     const receiverSocketId = getReceiverSocketId(receiverId);
+    const senderSocketId = getReceiverSocketId(senderId);
+
+    
+    // Prepare chat list update data for receiver
+    const chatListUpdateData = {
+      senderId: senderId.toString(),
+      senderInfo: {
+        _id: senderId,
+        fullName: req.user.fullName,
+        username: req.user.username,
+        profilePic: req.user.profilePic,
+      },
+      lastMessage: newMessage,
+      lastMessagePreview: newMessage.image
+        ? "📷 Image"
+        : newMessage.text?.substring(0, 50),
+      timestamp: newMessage.createdAt,
+      unreadCount: 1, // Frontend will handle incrementing this
+    };
+
+    // Emit to receiver
     if (receiverSocketId) {
+
+      // Emit message to the chat (if receiver has opened the chat)
       io.to(receiverSocketId).emit("newMessage", newMessage);
+
+      // Emit chat list update event (sidebar update)
+      io.to(receiverSocketId).emit("chat_list_update", chatListUpdateData);
+
+      // Emit notification alert event (only if chat is not currently active)
+      io.to(receiverSocketId).emit("notification_alert", {
+        type: "message",
+        senderInfo: chatListUpdateData.senderInfo,
+        messagePreview: chatListUpdateData.lastMessagePreview,
+        senderId: senderId.toString(),
+      });
+    }
+
+    // Also emit to sender (so their message updates with actual data from DB)
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("newMessage", newMessage);
     }
 
     res.status(201).json(newMessage);

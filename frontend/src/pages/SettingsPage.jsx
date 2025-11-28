@@ -197,40 +197,40 @@ const SettingsPage = () => {
       </header>
 
       {/* Settings Content */}
-      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 pb-32 relative z-20">
-        <div className="w-full mx-auto space-y-4 sm:space-y-6 max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          {/* Profile Section */}
+      <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-6 sm:py-8 pb-32 relative z-20">
+        <div className="w-full mx-auto max-w-6xl">
+          {/* Profile Section - Full Width */}
           {filterSections("profile") && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => toggleSection('profile')}
-                className="flex items-center justify-between w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group"
+                className="flex items-center justify-between w-full p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg transition-colors ${
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-lg transition-colors duration-200 ${
                     expandedSections.profile
-                      ? 'bg-cyan-500/10 text-cyan-500'
+                      ? 'bg-cyan-500/15 text-cyan-500'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500'
                   }`}>
-                    <User className="w-5 h-5" />
+                    <User className="w-6 h-6" />
                   </div>
-                  <h3 className={`text-base font-medium transition-colors ${
+                  <h3 className={`text-lg font-semibold transition-colors duration-200 ${
                     expandedSections.profile
                       ? 'text-cyan-500'
-                      : 'text-gray-700 dark:text-gray-200'
+                      : 'text-gray-800 dark:text-gray-100'
                   }`}>Profile</h3>
                 </div>
-                <ChevronDown className={`w-4 h-4 transform transition-transform ${
+                <ChevronDown className={`w-5 h-5 transform transition-transform duration-300 ${
                   expandedSections.profile ? 'rotate-180 text-cyan-500' : 'text-gray-500 dark:text-gray-400'
                 }`} />
               </button>
               {expandedSections.profile && (
-                <div className="p-6">
-                  {/* Profile Picture */}
-                  <div className="flex flex-col items-center mb-6">
+                <div className="px-6 pb-6 border-t border-gray-200 dark:border-gray-800">
+                  {/* Profile Picture - Centered */}
+                  <div className="flex flex-col items-center mb-8 pt-6">
                     <div className="relative group">
-                      <div className="w-32 h-32 rounded-full overflow-hidden bg-gradient-to-br from-emerald-500 to-cyan-500">
+                      <div className="w-36 h-36 rounded-full overflow-hidden bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg ring-4 ring-white dark:ring-gray-800">
                         {authUser?.profilePic ? (
                           <img
                             src={authUser.profilePic}
@@ -238,7 +238,7 @@ const SettingsPage = () => {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
+                          <div className="w-full h-full flex items-center justify-center text-white text-5xl font-bold">
                             {authUser?.fullName?.charAt(0).toUpperCase()}
                           </div>
                         )}
@@ -246,7 +246,7 @@ const SettingsPage = () => {
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUpdatingProfile}
-                        className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute bottom-0 right-0 w-12 h-12 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ring-4 ring-white dark:ring-gray-800"
                       >
                         {isUpdatingProfile ? (
                           <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
@@ -262,42 +262,54 @@ const SettingsPage = () => {
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
                       Click camera icon to change profile picture
                     </p>
                   </div>
 
-                  {/* Profile Information */}
-                  <div className="space-y-4">
-                    <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {/* Profile Information - Grid Layout */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="pb-4 border-b border-gray-200 dark:border-gray-800 md:border-b md:border-r md:pr-6 md:pb-0">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Full Name
                       </label>
-                      <div className="flex items-center gap-3 mt-2">
-                        <User className="w-5 h-5 text-gray-400" />
-                        <p className="text-base font-semibold text-black dark:text-white">
+                      <div className="flex items-center gap-3 mt-3">
+                        <User className="w-5 h-5 text-cyan-500/70" />
+                        <p className="text-base font-semibold text-gray-900 dark:text-white">
                           {authUser?.fullName}
                         </p>
                       </div>
                     </div>
 
-                    <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <div className="pb-4 border-b border-gray-200 dark:border-gray-800 md:border-b-0 md:pb-0">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Email
                       </label>
-                      <div className="flex items-center gap-3 mt-2">
-                        <Mail className="w-5 h-5 text-gray-400" />
-                        <p className="text-base text-black dark:text-white">
+                      <div className="flex items-center gap-3 mt-3">
+                        <Mail className="w-5 h-5 text-cyan-500/70" />
+                        <p className="text-base text-gray-900 dark:text-white break-all">
                           {authUser?.email}
                         </p>
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <div className="pb-4 border-b border-gray-200 dark:border-gray-800 md:border-b md:border-r md:pr-6 md:pb-0">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        Username
+                      </label>
+                      <div className="flex items-center gap-3 mt-3">
+                        <span className="text-xl font-bold text-cyan-500/70">@</span>
+                        <p className="text-base font-semibold text-gray-900 dark:text-white">
+                          {authUser?.username}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pb-4 md:pb-0">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Member Since
                       </label>
-                      <p className="text-base text-black dark:text-white mt-2">
+                      <p className="text-base text-gray-900 dark:text-white mt-3">
                         {new Date(authUser?.createdAt).toLocaleDateString(undefined, {
                           year: 'numeric',
                           month: 'long',
@@ -313,32 +325,32 @@ const SettingsPage = () => {
 
           {/* Notifications & Sounds */}
           {filterSections("notifications") && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => toggleSection('notifications')}
                 className="flex items-center justify-between w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg transition-colors ${
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-lg transition-colors duration-200 ${
                     expandedSections.notifications
-                      ? 'bg-cyan-500/10 text-cyan-500'
+                      ? 'bg-cyan-500/15 text-cyan-500'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500'
                   }`}>
-                    <Bell className="w-5 h-5" />
+                    <Bell className="w-6 h-6" />
                   </div>
-                  <h3 className={`text-base font-medium transition-colors ${
+                  <h3 className={`text-lg font-semibold transition-colors duration-200 ${
                     expandedSections.notifications
                       ? 'text-cyan-500'
-                      : 'text-gray-700 dark:text-gray-200'
-                  }`}>Notifications</h3>
+                      : 'text-gray-800 dark:text-gray-100'
+                  }`}>Notifications & Sounds</h3>
                 </div>
-                <ChevronDown className={`w-4 h-4 transform transition-transform ${
+                <ChevronDown className={`w-5 h-5 transform transition-transform duration-300 ${
                   expandedSections.notifications ? 'rotate-180 text-cyan-500' : 'text-gray-500 dark:text-gray-400'
                 }`} />
               </button>
               {expandedSections.notifications && (
-                <div className="p-4 space-y-4">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
                   <ToggleSwitch
                     checked={settings.notifications}
                     onChange={settings.toggleNotifications}
@@ -370,33 +382,33 @@ const SettingsPage = () => {
 
           {/* Appearance */}
           {filterSections("appearance") && (
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
               <button
                 type="button"
                 onClick={() => toggleSection('appearance')}
-                className="flex items-center justify-between w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group"
+                className="flex items-center justify-between w-full p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg transition-colors ${
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-lg transition-colors duration-200 ${
                     expandedSections.appearance
-                      ? 'bg-cyan-500/10 text-cyan-500'
+                      ? 'bg-cyan-500/15 text-cyan-500'
                       : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500'
                   }`}>
-                    <Palette className="w-5 h-5" />
+                    <Palette className="w-6 h-6" />
                   </div>
-                  <h3 className={`text-base font-medium transition-colors ${
+                  <h3 className={`text-lg font-semibold transition-colors duration-200 ${
                     expandedSections.appearance
                       ? 'text-cyan-500'
-                      : 'text-gray-700 dark:text-gray-200'
+                      : 'text-gray-800 dark:text-gray-100'
                   }`}>Appearance</h3>
                 </div>
-                <ChevronDown className={`w-4 h-4 transform transition-transform ${
+                <ChevronDown className={`w-5 h-5 transform transition-transform duration-300 ${
                   expandedSections.appearance ? 'rotate-180 text-cyan-500' : 'text-gray-500 dark:text-gray-400'
                 }`} />
               </button>
               {expandedSections.appearance && (
-                <div className="p-4 space-y-4">
-                  <div className="py-3 border-b border-gray-200 dark:border-gray-700">
+                <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 space-y-4">
+                  <div className="py-3 border-b border-gray-200 dark:border-gray-800">
                     <ThemeSwitcher />
                   </div>
                   <Select
@@ -433,17 +445,13 @@ const SettingsPage = () => {
               )}
             </div>
           )}
-
-
-
-
         </div>
       </div>
 
       {/* Fixed Footer Actions */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg z-30">
-        <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-2xl z-30">
+        <div className="w-full px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-5">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               onClick={handleResetSettings}
               className="w-full flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-black dark:text-white font-semibold py-2.5 sm:py-3 px-4 rounded-lg transition-colors text-sm sm:text-base"
