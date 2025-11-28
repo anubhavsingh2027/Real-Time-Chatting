@@ -153,9 +153,13 @@ export const useChatStore = create(
             ),
           }));
 
-          // NOTE: Do NOT emit socket event here!
-          // The backend already handles emitting "newMessage" to both sender and receiver
-          // Emitting here causes message duplication on the receiver side
+          // Emit the message through socket for real-time update
+          if (socket) {
+            socket.emit("newMessage", {
+              message: actualMessage,
+              receiverId: selectedUser._id,
+            });
+          }
         } catch (error) {
           // Remove optimistic message on failure
           set((state) => ({
@@ -290,7 +294,6 @@ export const useChatStore = create(
         socket.off("chat_list_update");
         socket.off("notification_alert");
         socket.off("messageReceived"); // Keep for backwards compatibility
-        socket.off("newMessage"); // Remove if it exists from previous calls
 
         // ============ MAIN EVENT: chat_list_update ============
         // This updates the sidebar in real-time whenever a new message arrives
@@ -418,124 +421,118 @@ export const useChatStore = create(
       },
 
       // Chat-specific subscription (for active conversation messages)
-      // This includes the consolidated newMessage listener
       subscribeToMessages: () => {
-        const { selectedUser } = get();
-        if (!selectedUser) return;
+  const { selectedUser } = get();
+  const { soundEffects } = useSettingsStore.getState();
+  if (!selectedUser) return;
 
-        const socket = useAuthStore.getState().socket;
-        if (!socket) return;
+  const socket = useAuthStore.getState().socket;
+  if (!socket) return;
 
-        // Remove only chat-specific listeners
-        socket.off("messageStatus");
-        socket.off("messageDeleted");
-        socket.off("messageReaction");
-        socket.off("messageReactionRemoved");
-        socket.off("newMessage");
+  // ---- REFERENCE CACHED LISTENERS TO PREVENT DUPLICATION ----
+  if (!window._messageListeners) window._messageListeners = {};
 
-        // ============ UNIFIED: newMessage listener ============
-        // Handles ALL message events - adding to chat + sound effects
-        // This is the ONLY place newMessage is handled to prevent duplication
-        socket.on("newMessage", (data) => {
-          const newMessage = data.message || data;
-          const { authUser } = useAuthStore.getState();
-          const { soundEffects } = useSettingsStore.getState();
-          const { messages } = get();
+  // ================== NEW MESSAGE HANDLER ==================
+  if (!window._messageListeners.newMessage) {
+    window._messageListeners.newMessage = (data) => {
+      const newMessage = data.message || data;
+      const { authUser } = useAuthStore.getState();
+      const { selectedUser } = get();
 
-          // Convert IDs to strings for comparison
-          const senderIdStr =
-            typeof newMessage.senderId === "object"
-              ? newMessage.senderId?._id?.toString() ||
-              newMessage.senderId?.toString()
-              : newMessage.senderId?.toString();
-          const receiverIdStr =
-            typeof newMessage.receiverId === "object"
-              ? newMessage.receiverId?._id?.toString() ||
-              newMessage.receiverId?.toString()
-              : newMessage.receiverId?.toString();
-          const selectedUserIdStr = selectedUser?._id?.toString();
-          const authUserIdStr = authUser._id?.toString();
+      if (!selectedUser) return;
 
-          // Check for duplicates - match by MongoDB _id
-          const messageExists = messages.some(
-            (msg) => msg._id === newMessage._id
-          );
+      const sender = newMessage.senderId?._id || newMessage.senderId;
+      const receiver = newMessage.receiverId?._id || newMessage.receiverId;
 
-          if (messageExists) return;
+      const isRelevant =
+        (sender === selectedUser._id && receiver === authUser._id) ||
+        (sender === authUser._id && receiver === selectedUser._id);
 
-          // Only process messages relevant to the current chat
-          const isRelevantMessage =
-            (senderIdStr === selectedUserIdStr &&
-              receiverIdStr === authUserIdStr) ||
-            (senderIdStr === authUserIdStr &&
-              receiverIdStr === selectedUserIdStr);
+      if (!isRelevant) return;
 
-          if (!isRelevantMessage) return;
+      set((state) => {
+        const exists = state.messages.some((msg) => msg._id === newMessage._id);
+        if (exists) return state;
 
-          // Play sound for incoming messages (if enabled and from other user)
-          if (soundEffects && senderIdStr !== authUserIdStr) {
-            const notificationSound = new Audio("/sounds/notification.mp3");
-            notificationSound.currentTime = 0;
-            notificationSound.play().catch(() => {});
-          }
+        if (soundEffects && sender === selectedUser._id) {
+          const sound = new Audio("/sounds/notification.mp3");
+          sound.play().catch(() => {});
+        }
 
-          // Add message to chat
-          set((state) => ({
-            messages: [...state.messages, newMessage],
-          }));
-        });
+        return { messages: [...state.messages, newMessage] };
+      });
+    };
 
-        // Listen for message status updates
-        socket.on("messageStatus", ({ messageId, status }) => {
-          get().updateMessageStatus(messageId, status);
-        });        // Listen for deleted messages
-        socket.on("messageDeleted", (messageId) => {
-          set((state) => ({
-            messages: state.messages.filter((msg) => msg._id !== messageId),
-          }));
-        });
+    socket.on("newMessage", window._messageListeners.newMessage);
+  }
 
-        // Listen for reactions
-        socket.on("messageReaction", ({ messageId, userId, emoji }) => {
-          set((state) => ({
-            messages: state.messages.map((msg) =>
-              msg._id === messageId
-                ? {
-                    ...msg,
-                    reactions: [
-                      ...(msg.reactions || []).filter(
-                        (r) => r.userId !== userId
-                      ),
-                      { userId, emoji, createdAt: new Date().toISOString() },
-                    ],
-                  }
-                : msg
-            ),
-          }));
-        });
+  // ================== MESSAGE STATUS ==================
+  if (!window._messageListeners.messageStatus) {
+    window._messageListeners.messageStatus = ({ messageId, status }) => {
+      get().updateMessageStatus(messageId, status);
+    };
 
-        // Listen for reaction removals
-        socket.on("messageReactionRemoved", ({ messageId, userId }) => {
-          set((state) => ({
-            messages: state.messages.map((msg) =>
-              msg._id === messageId
-                ? {
-                    ...msg,
-                    reactions: (msg.reactions || []).filter(
-                      (r) => r.userId !== userId
-                    ),
-                  }
-                : msg
-            ),
-          }));
-        });
-      },
+    socket.on("messageStatus", window._messageListeners.messageStatus);
+  }
+
+  // ================== DELETE MESSAGE ==================
+  if (!window._messageListeners.messageDeleted) {
+    window._messageListeners.messageDeleted = (messageId) => {
+      set((state) => ({
+        messages: state.messages.filter((msg) => msg._id !== messageId),
+      }));
+    };
+
+    socket.on("messageDeleted", window._messageListeners.messageDeleted);
+  }
+
+  // ================== REACTION ADDED ==================
+  if (!window._messageListeners.reactionAdded) {
+    window._messageListeners.reactionAdded = ({ messageId, userId, emoji }) => {
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === messageId
+            ? {
+                ...msg,
+                reactions: [
+                  ...(msg.reactions || []).filter((r) => r.userId !== userId),
+                  { userId, emoji, createdAt: new Date().toISOString() },
+                ],
+              }
+            : msg
+        ),
+      }));
+    };
+
+    socket.on("messageReaction", window._messageListeners.reactionAdded);
+  }
+
+  // ================== REACTION REMOVED ==================
+  if (!window._messageListeners.reactionRemoved) {
+    window._messageListeners.reactionRemoved = ({ messageId, userId }) => {
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === messageId
+            ? {
+                ...msg,
+                reactions: (msg.reactions || []).filter(
+                  (r) => r.userId !== userId
+                ),
+              }
+            : msg
+        ),
+      }));
+    };
+
+    socket.on("messageReactionRemoved", window._messageListeners.reactionRemoved);
+  }
+},
+
 
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
-        if (!socket) return;
-        
-        // Remove all message-related listeners when leaving a chat
+        // Only unsubscribe from chat-specific listeners
+        // Keep chat_list_update and notification_alert active for global chat list updates
         socket.off("newMessage");
         socket.off("messageStatus");
         socket.off("messageDeleted");
