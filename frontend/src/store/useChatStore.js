@@ -154,12 +154,7 @@ export const useChatStore = create(
           }));
 
           // Emit the message through socket for real-time update
-          if (socket) {
-            socket.emit("newMessage", {
-              message: actualMessage,
-              receiverId: selectedUser._id,
-            });
-          }
+          
         } catch (error) {
           // Remove optimistic message on failure
           set((state) => ({
