@@ -292,30 +292,6 @@ export const useChatStore = create(
         socket.off("messageReceived"); // Keep for backwards compatibility
         socket.off("newMessage"); // Remove if it exists from previous calls
 
-        // ============ MAIN EVENT: newMessage (Global) ============
-        // This handler processes ALL incoming messages globally
-        // Needed for unread count tracking and play sound
-        socket.on("newMessage", (data) => {
-          const newMessage = data.message || data;
-          const { authUser } = useAuthStore.getState();
-          const { soundEffects } = useSettingsStore.getState();
-          const { selectedUser } = get();
-
-          // Convert IDs to strings for comparison
-          const senderIdStr =
-            typeof newMessage.senderId === "object"
-              ? newMessage.senderId?._id?.toString() ||
-                newMessage.senderId?.toString()
-              : newMessage.senderId?.toString();
-
-          // Play sound for incoming messages (if enabled)
-          if (soundEffects && senderIdStr !== useAuthStore.getState().authUser._id?.toString()) {
-            const notificationSound = new Audio("/sounds/notification.mp3");
-            notificationSound.currentTime = 0;
-            notificationSound.play().catch(() => {});
-          }
-        });
-
         // ============ MAIN EVENT: chat_list_update ============
         // This updates the sidebar in real-time whenever a new message arrives
         socket.on("chat_list_update", (data) => {
@@ -442,29 +418,29 @@ export const useChatStore = create(
       },
 
       // Chat-specific subscription (for active conversation messages)
+      // This includes the consolidated newMessage listener
       subscribeToMessages: () => {
         const { selectedUser } = get();
-        const { soundEffects } = useSettingsStore.getState();
         if (!selectedUser) return;
 
         const socket = useAuthStore.getState().socket;
         if (!socket) return;
 
-        // Remove only chat-specific listeners (NOT newMessage - that's handled globally)
+        // Remove only chat-specific listeners
+        socket.off("messageStatus");
         socket.off("messageDeleted");
         socket.off("messageReaction");
         socket.off("messageReactionRemoved");
-        socket.off("messageStatus");
+        socket.off("newMessage");
 
-        // Listen for message status updates
-        socket.on("messageStatus", ({ messageId, status }) => {
-          get().updateMessageStatus(messageId, status);
-        });
-
-        // Listen for new messages - filter and add to chat display
+        // ============ UNIFIED: newMessage listener ============
+        // Handles ALL message events - adding to chat + sound effects
+        // This is the ONLY place newMessage is handled to prevent duplication
         socket.on("newMessage", (data) => {
           const newMessage = data.message || data;
           const { authUser } = useAuthStore.getState();
+          const { soundEffects } = useSettingsStore.getState();
+          const { messages } = get();
 
           // Convert IDs to strings for comparison
           const senderIdStr =
@@ -477,8 +453,15 @@ export const useChatStore = create(
               ? newMessage.receiverId?._id?.toString() ||
               newMessage.receiverId?.toString()
               : newMessage.receiverId?.toString();
-          const selectedUserIdStr = selectedUser._id?.toString();
+          const selectedUserIdStr = selectedUser?._id?.toString();
           const authUserIdStr = authUser._id?.toString();
+
+          // Check for duplicates - match by MongoDB _id
+          const messageExists = messages.some(
+            (msg) => msg._id === newMessage._id
+          );
+
+          if (messageExists) return;
 
           // Only process messages relevant to the current chat
           const isRelevantMessage =
@@ -489,18 +472,22 @@ export const useChatStore = create(
 
           if (!isRelevantMessage) return;
 
-          set((state) => {
-            // Check for duplicates - match by MongoDB _id
-            const messageExists = state.messages.some(
-              (msg) => msg._id === newMessage._id
-            );
+          // Play sound for incoming messages (if enabled and from other user)
+          if (soundEffects && senderIdStr !== authUserIdStr) {
+            const notificationSound = new Audio("/sounds/notification.mp3");
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(() => {});
+          }
 
-            if (messageExists) return state;
+          // Add message to chat
+          set((state) => ({
+            messages: [...state.messages, newMessage],
+          }));
+        });
 
-            return {
-              messages: [...state.messages, newMessage],
-            };
-          });
+        // Listen for message status updates
+        socket.on("messageStatus", ({ messageId, status }) => {
+          get().updateMessageStatus(messageId, status);
         });        // Listen for deleted messages
         socket.on("messageDeleted", (messageId) => {
           set((state) => ({
@@ -546,8 +533,10 @@ export const useChatStore = create(
 
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
-        // Only unsubscribe from chat-specific listeners
-        // Keep global listeners (newMessage, chat_list_update, notification_alert) active
+        if (!socket) return;
+        
+        // Remove all message-related listeners when leaving a chat
+        socket.off("newMessage");
         socket.off("messageStatus");
         socket.off("messageDeleted");
         socket.off("messageReaction");
