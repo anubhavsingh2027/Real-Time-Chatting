@@ -290,6 +290,31 @@ export const useChatStore = create(
         socket.off("chat_list_update");
         socket.off("notification_alert");
         socket.off("messageReceived"); // Keep for backwards compatibility
+        socket.off("newMessage"); // Remove if it exists from previous calls
+
+        // ============ MAIN EVENT: newMessage (Global) ============
+        // This handler processes ALL incoming messages globally
+        // Needed for unread count tracking and play sound
+        socket.on("newMessage", (data) => {
+          const newMessage = data.message || data;
+          const { authUser } = useAuthStore.getState();
+          const { soundEffects } = useSettingsStore.getState();
+          const { selectedUser } = get();
+
+          // Convert IDs to strings for comparison
+          const senderIdStr =
+            typeof newMessage.senderId === "object"
+              ? newMessage.senderId?._id?.toString() ||
+                newMessage.senderId?.toString()
+              : newMessage.senderId?.toString();
+
+          // Play sound for incoming messages (if enabled)
+          if (soundEffects && senderIdStr !== useAuthStore.getState().authUser._id?.toString()) {
+            const notificationSound = new Audio("/sounds/notification.mp3");
+            notificationSound.currentTime = 0;
+            notificationSound.play().catch(() => {});
+          }
+        });
 
         // ============ MAIN EVENT: chat_list_update ============
         // This updates the sidebar in real-time whenever a new message arrives
@@ -425,8 +450,7 @@ export const useChatStore = create(
         const socket = useAuthStore.getState().socket;
         if (!socket) return;
 
-        // Remove any existing listeners for current chat
-        socket.off("newMessage");
+        // Remove only chat-specific listeners (NOT newMessage - that's handled globally)
         socket.off("messageDeleted");
         socket.off("messageReaction");
         socket.off("messageReactionRemoved");
@@ -437,7 +461,7 @@ export const useChatStore = create(
           get().updateMessageStatus(messageId, status);
         });
 
-        // Listen for new messages
+        // Listen for new messages - filter and add to chat display
         socket.on("newMessage", (data) => {
           const newMessage = data.message || data;
           const { authUser } = useAuthStore.getState();
@@ -446,12 +470,12 @@ export const useChatStore = create(
           const senderIdStr =
             typeof newMessage.senderId === "object"
               ? newMessage.senderId?._id?.toString() ||
-                newMessage.senderId?.toString()
+              newMessage.senderId?.toString()
               : newMessage.senderId?.toString();
           const receiverIdStr =
             typeof newMessage.receiverId === "object"
               ? newMessage.receiverId?._id?.toString() ||
-                newMessage.receiverId?.toString()
+              newMessage.receiverId?.toString()
               : newMessage.receiverId?.toString();
           const selectedUserIdStr = selectedUser._id?.toString();
           const authUserIdStr = authUser._id?.toString();
@@ -473,20 +497,11 @@ export const useChatStore = create(
 
             if (messageExists) return state;
 
-            // Play sound for incoming messages from other users
-            if (soundEffects && senderIdStr === selectedUserIdStr) {
-              const notificationSound = new Audio("/sounds/notification.mp3");
-              notificationSound.currentTime = 0;
-              notificationSound.play().catch(() => {});
-            }
-
             return {
               messages: [...state.messages, newMessage],
             };
           });
-        });
-
-        // Listen for deleted messages
+        });        // Listen for deleted messages
         socket.on("messageDeleted", (messageId) => {
           set((state) => ({
             messages: state.messages.filter((msg) => msg._id !== messageId),
@@ -532,8 +547,7 @@ export const useChatStore = create(
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
         // Only unsubscribe from chat-specific listeners
-        // Keep chat_list_update and notification_alert active for global chat list updates
-        socket.off("newMessage");
+        // Keep global listeners (newMessage, chat_list_update, notification_alert) active
         socket.off("messageStatus");
         socket.off("messageDeleted");
         socket.off("messageReaction");
