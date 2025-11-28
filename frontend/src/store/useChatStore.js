@@ -5,18 +5,35 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 import useSettingsStore from "./useSettingsStore";
 
-// Function to filter out image data from messages for storage
+
 const filterMessagesForStorage = (messages) => {
   return messages.map((msg) => ({
     ...msg,
-    image: msg.image ? true : false, // Only store boolean indicating presence of image
+    image: msg.image ? true : false,
   }));
 };
+
+// ✅ KEEP HERE
+const uniqueById = (messages) => {
+  const map = new Map();
+  messages.forEach((msg) => map.set(msg._id || msg.tempId, msg));
+  return [...map.values()];
+};
+
+const normalizeMessage = (msg) => ({
+  ...msg,
+  senderId: typeof msg.senderId === "object" ? msg.senderId._id : msg.senderId,
+  receiverId:
+    typeof msg.receiverId === "object" ? msg.receiverId._id : msg.receiverId,
+});
 
 // Custom storage for persist middleware
 const customStorage = {
   getItem: (name) => {
     const str = localStorage.getItem(name);
+
+
+
     if (!str) return null;
     const data = JSON.parse(str);
     return {
@@ -119,7 +136,8 @@ export const useChatStore = create(
 
         // Update messages without storing image data in state
         set({
-          messages: [...messages, optimisticMessage],
+          messages: [...messages, normalizeMessage(optimisticMessage)],
+
         });
 
         try {
@@ -148,13 +166,16 @@ export const useChatStore = create(
 
           // Update messages, replacing optimistic with actual
           set((state) => ({
-            messages: state.messages.map((msg) =>
-              msg._id === tempId ? actualMessage : msg
-            ),
+            messages: uniqueById(
+            state.messages
+              .filter((m) => m._id !== tempId && m.tempId !== actualMessage._id)
+              .concat(normalizeMessage(actualMessage))
+
+          )
+
           }));
 
           // Emit the message through socket for real-time update
-
         } catch (error) {
           // Remove optimistic message on failure
           set((state) => ({
@@ -277,93 +298,160 @@ export const useChatStore = create(
         }));
       },
 
+      subscribeToGlobalMessages: () => {
+        const socket = useAuthStore.getState().socket;
+        if (!socket) return;
+
+        // remove previous listeners to avoid duplication
+        socket.off("chat_list_update");
+        socket.off("notification_alert");
+
+        socket.on("chat_list_update", (data) => {
+          const {
+            senderId,
+            senderInfo,
+            lastMessage,
+            lastMessagePreview,
+            timestamp,
+          } = data;
+
+          set((state) => {
+            const idx = state.chats.findIndex((chat) => chat._id === senderId);
+
+            if (idx > -1) {
+              const updatedChats = [...state.chats];
+              updatedChats[idx] = {
+                ...updatedChats[idx],
+                lastMessage,
+                lastMessagePreview,
+                updatedAt: timestamp,
+              };
+
+              // move updated chat to top
+              const updated = updatedChats.splice(idx, 1);
+              return { chats: [...updated, ...updatedChats] };
+            }
+
+            // add new chat if not exist
+            return {
+              chats: [
+                {
+                  _id: senderId,
+                  ...senderInfo,
+                  lastMessage,
+                  lastMessagePreview,
+                  updatedAt: timestamp,
+                },
+                ...state.chats,
+              ],
+            };
+          });
+        });
+
+        socket.on(
+          "notification_alert",
+          ({ senderId, messagePreview, senderInfo }) => {
+            const { selectedUser } = get();
+
+            // only notify when we are NOT in same chat
+            if (selectedUser?._id !== senderId) {
+              toast(`${senderInfo.fullName}: ${messagePreview}`);
+            }
+          }
+        );
+      },
+
       // Global subscription for messageReceived (chat list updates + notifications)
       subscribeToMessages: () => {
-  const socket = useAuthStore.getState().socket;
-  const { selectedUser } = get();
-  const { soundEffects } = useSettingsStore.getState();
+        const socket = useAuthStore.getState().socket;
+        const { selectedUser } = get();
+        const { soundEffects } = useSettingsStore.getState();
 
-  if (!socket || !selectedUser?._id) return;
+        if (!socket || !selectedUser?._id) return;
 
-  // ❗ Always remove old listeners before adding new ones
-  socket.off("newMessage");
-  socket.off("messageStatus");
-  socket.off("messageDeleted");
-  socket.off("messageReaction");
-  socket.off("messageReactionRemoved");
+        // ❗ Always remove old listeners before adding new ones
+        socket.off("newMessage");
+        socket.off("messageStatus");
+        socket.off("messageDeleted");
+        socket.off("messageReaction");
+        socket.off("messageReactionRemoved");
 
-  // NEW MESSAGE LISTENER
-  const handleNewMessage = (data) => {
-    const newMessage = data.message || data;
-    const { authUser } = useAuthStore.getState();
+        // NEW MESSAGE LISTENER
+        const handleNewMessage = (data) => {
+          const newMessage = data.message || data;
+          const { authUser } = useAuthStore.getState();
 
-    const sender = newMessage.senderId?._id || newMessage.senderId;
-    const receiver = newMessage.receiverId?._id || newMessage.receiverId;
+          const sender = newMessage.senderId?._id || newMessage.senderId;
+          const receiver = newMessage.receiverId?._id || newMessage.receiverId;
 
-    const isRelevant =
-      (sender === selectedUser._id && receiver === authUser._id) ||
-      (sender === authUser._id && receiver === selectedUser._id);
+          const isRelevant =
+            (sender === selectedUser._id && receiver === authUser._id) ||
+            (sender === authUser._id && receiver === selectedUser._id);
 
-    if (!isRelevant) return;
+          if (!isRelevant) return;
 
-    set((state) => {
-      // prevent duplicates
-      if (state.messages.some((m) => m._id === newMessage._id)) return state;
+          set((state) => {
+            // 🔥 FIX: STRONGER duplicate logic
+            const isDuplicate = state.messages.some(
+              (m) =>
+                m._id === newMessage._id ||
+                m.tempId === newMessage._id ||
+                m._id === newMessage.tempId
+            );
 
-      if (soundEffects && sender !== authUser._id) {
-        new Audio("/sounds/notification.mp3").play().catch(() => {});
-      }
+            if (isDuplicate) return state;
 
-      return { messages: [...state.messages, newMessage] };
-    });
-  };
+            return { messages: uniqueById([...state.messages, normalizeMessage(newMessage)]) };
 
-  socket.on("newMessage", handleNewMessage);
+          });
+        };
 
-  // Others remain the same:
-  socket.on("messageStatus", ({ messageId, status }) => {
-    get().updateMessageStatus(messageId, status);
-  });
+        socket.on("newMessage", handleNewMessage);
 
-  socket.on("messageDeleted", (messageId) => {
-    set((state) => ({
-      messages: state.messages.filter((msg) => msg._id !== messageId),
-    }));
-  });
+        // Others remain the same:
+        socket.on("messageStatus", ({ messageId, status }) => {
+          get().updateMessageStatus(messageId, status);
+        });
 
-  socket.on("messageReaction", ({ messageId, userId, emoji }) => {
-    set((state) => ({
-      messages: state.messages.map((msg) =>
-        msg._id === messageId
-          ? {
-              ...msg,
-              reactions: [
-                ...(msg.reactions || []).filter((r) => r.userId !== userId),
-                { userId, emoji, createdAt: new Date().toISOString() },
-              ],
-            }
-          : msg
-      ),
-    }));
-  });
+        socket.on("messageDeleted", (messageId) => {
+          set((state) => ({
+            messages: state.messages.filter((msg) => msg._id !== messageId),
+          }));
+        });
 
-  socket.on("messageReactionRemoved", ({ messageId, userId }) => {
-    set((state) => ({
-      messages: state.messages.map((msg) =>
-        msg._id === messageId
-          ? {
-              ...msg,
-              reactions: (msg.reactions || []).filter(
-                (r) => r.userId !== userId
-              ),
-            }
-          : msg
-      ),
-    }));
-  });
-},
+        socket.on("messageReaction", ({ messageId, userId, emoji }) => {
+          set((state) => ({
+            messages: state.messages.map((msg) =>
+              msg._id === messageId
+                ? {
+                    ...msg,
+                    reactions: [
+                      ...(msg.reactions || []).filter(
+                        (r) => r.userId !== userId
+                      ),
+                      { userId, emoji, createdAt: new Date().toISOString() },
+                    ],
+                  }
+                : msg
+            ),
+          }));
+        });
 
-
+        socket.on("messageReactionRemoved", ({ messageId, userId }) => {
+          set((state) => ({
+            messages: state.messages.map((msg) =>
+              msg._id === messageId
+                ? {
+                    ...msg,
+                    reactions: (msg.reactions || []).filter(
+                      (r) => r.userId !== userId
+                    ),
+                  }
+                : msg
+            ),
+          }));
+        });
+      },
 
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;

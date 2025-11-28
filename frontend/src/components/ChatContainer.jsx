@@ -29,11 +29,20 @@ function ChatContainer({ onBack }) {
   if (!selectedUser?._id) return;
 
   getMessagesByUserId(selectedUser._id);
-  subscribeToMessages();
   clearUnreadCount(selectedUser._id);
 
-  return () => unsubscribeFromMessages();
+  // prevent duplicate socket listeners
+  let unsubscribed = false;
+  subscribeToMessages();
+
+  return () => {
+    if (!unsubscribed) {
+      unsubscribeFromMessages();
+      unsubscribed = true;
+    }
+  };
 }, [selectedUser?._id]);
+
 
 
   // Scroll to bottom when messages load
@@ -71,7 +80,8 @@ function ChatContainer({ onBack }) {
             <AnimatePresence mode="popLayout">
               {messages.map((msg) => (
                 <MessageBubble
-                  key={msg._id}
+                  key={msg._id || msg.tempId}
+
                   message={msg}
                   isOwnMessage={msg.senderId === authUser._id}
                   messageStatus={
