@@ -154,7 +154,7 @@ export const useChatStore = create(
           }));
 
           // Emit the message through socket for real-time update
-          
+
         } catch (error) {
           // Remove optimistic message on failure
           set((state) => ({
@@ -278,250 +278,91 @@ export const useChatStore = create(
       },
 
       // Global subscription for messageReceived (chat list updates + notifications)
-      // This should ALWAYS be active, regardless of selectedUser
-      subscribeToGlobalMessages: () => {
-        const socket = useAuthStore.getState().socket;
-        if (!socket) return;
-
-
-
-        // Remove any existing global listeners to prevent duplicates
-        socket.off("chat_list_update");
-        socket.off("notification_alert");
-        socket.off("messageReceived"); // Keep for backwards compatibility
-
-        // ============ MAIN EVENT: chat_list_update ============
-        // This updates the sidebar in real-time whenever a new message arrives
-        socket.on("chat_list_update", (data) => {
-          const {
-            senderId,
-            senderInfo,
-            lastMessage,
-            lastMessagePreview,
-            timestamp,
-            unreadCount,
-          } = data;
-          const { selectedUser } = get();
-          const { chats } = get();
-
-          // Check if this conversation already exists in chat list
-          const existingChatIndex = chats.findIndex(
-            (chat) => chat._id === senderId
-          );
-
-          if (existingChatIndex > -1) {
-            // Update existing chat - move to top and update last message
-            set((state) => {
-              const updatedChats = [...state.chats];
-              updatedChats[existingChatIndex] = {
-                ...updatedChats[existingChatIndex],
-                lastMessage: lastMessage,
-                lastMessagePreview: lastMessagePreview,
-                updatedAt: timestamp,
-              };
-              // Move to top
-              const [chat] = updatedChats.splice(existingChatIndex, 1);
-              return { chats: [chat, ...updatedChats] };
-            });
-
-            // If not currently viewing this chat, increment unread count
-            if (selectedUser?._id !== senderId) {
-              get().incrementUnreadCount(senderId);
-            }
-          } else {
-            // Add new chat to the top
-            set((state) => ({
-              chats: [
-                {
-                  _id: senderId,
-                  fullName: senderInfo.fullName,
-                  username: senderInfo.username,
-                  profilePic: senderInfo.profilePic,
-                  lastMessage: lastMessage,
-                  lastMessagePreview: lastMessagePreview,
-                  updatedAt: timestamp,
-                },
-                ...state.chats,
-              ],
-            }));
-
-            // Increment unread count for new chat
-            get().incrementUnreadCount(senderId);
-          }
-        });
-
-        // ============ SECONDARY EVENT: notification_alert ============
-        // This triggers toast notifications for new messages
-        socket.on("notification_alert", (data) => {
-          const { type, senderInfo, messagePreview, senderId } = data;
-          const { selectedUser } = get();
-
-          // Only show notification if not currently chatting with this user
-          if (selectedUser?._id !== senderId) {
-
-            if (window._handleMessageNotification) {
-              window._handleMessageNotification({
-                senderInfo,
-                message: { text: messagePreview },
-              });
-            }
-          }
-        });
-
-        // ============ BACKWARDS COMPATIBILITY: messageReceived ============
-        // Keep this for any old events that might still be sent
-        socket.on("messageReceived", (data) => {
-          const { senderId, senderInfo, message } = data;
-          const { selectedUser } = get();
-          const { chats } = get();
-
-          const existingChatIndex = chats.findIndex(
-            (chat) => chat._id === senderId
-          );
-
-          if (existingChatIndex > -1) {
-            set((state) => {
-              const updatedChats = [...state.chats];
-              updatedChats[existingChatIndex] = {
-                ...updatedChats[existingChatIndex],
-                lastMessage: message,
-              };
-              const [chat] = updatedChats.splice(existingChatIndex, 1);
-              return { chats: [chat, ...updatedChats] };
-            });
-          } else {
-            set((state) => ({
-              chats: [
-                {
-                  _id: senderId,
-                  fullName: senderInfo.fullName,
-                  username: senderInfo.username,
-                  profilePic: senderInfo.profilePic,
-                  lastMessage: message,
-                },
-                ...state.chats,
-              ],
-            }));
-          }
-
-          if (selectedUser?._id !== senderId) {
-            if (window._handleMessageNotification) {
-              window._handleMessageNotification({
-                senderInfo,
-                message,
-              });
-            }
-          }
-        });
-      },
-
-      // Chat-specific subscription (for active conversation messages)
       subscribeToMessages: () => {
+  const socket = useAuthStore.getState().socket;
   const { selectedUser } = get();
   const { soundEffects } = useSettingsStore.getState();
-  if (!selectedUser) return;
 
-  const socket = useAuthStore.getState().socket;
-  if (!socket) return;
+  if (!socket || !selectedUser?._id) return;
 
-  // ---- REFERENCE CACHED LISTENERS TO PREVENT DUPLICATION ----
-  if (!window._messageListeners) window._messageListeners = {};
+  // ❗ Always remove old listeners before adding new ones
+  socket.off("newMessage");
+  socket.off("messageStatus");
+  socket.off("messageDeleted");
+  socket.off("messageReaction");
+  socket.off("messageReactionRemoved");
 
-  // ================== NEW MESSAGE HANDLER ==================
-  if (!window._messageListeners.newMessage) {
-    window._messageListeners.newMessage = (data) => {
-      const newMessage = data.message || data;
-      const { authUser } = useAuthStore.getState();
-      const { selectedUser } = get();
+  // NEW MESSAGE LISTENER
+  const handleNewMessage = (data) => {
+    const newMessage = data.message || data;
+    const { authUser } = useAuthStore.getState();
 
-      if (!selectedUser) return;
+    const sender = newMessage.senderId?._id || newMessage.senderId;
+    const receiver = newMessage.receiverId?._id || newMessage.receiverId;
 
-      const sender = newMessage.senderId?._id || newMessage.senderId;
-      const receiver = newMessage.receiverId?._id || newMessage.receiverId;
+    const isRelevant =
+      (sender === selectedUser._id && receiver === authUser._id) ||
+      (sender === authUser._id && receiver === selectedUser._id);
 
-      const isRelevant =
-        (sender === selectedUser._id && receiver === authUser._id) ||
-        (sender === authUser._id && receiver === selectedUser._id);
+    if (!isRelevant) return;
 
-      if (!isRelevant) return;
+    set((state) => {
+      // prevent duplicates
+      if (state.messages.some((m) => m._id === newMessage._id)) return state;
 
-      set((state) => {
-        const exists = state.messages.some((msg) => msg._id === newMessage._id);
-        if (exists) return state;
+      if (soundEffects && sender !== authUser._id) {
+        new Audio("/sounds/notification.mp3").play().catch(() => {});
+      }
 
-        if (soundEffects && sender === selectedUser._id) {
-          const sound = new Audio("/sounds/notification.mp3");
-          sound.play().catch(() => {});
-        }
+      return { messages: [...state.messages, newMessage] };
+    });
+  };
 
-        return { messages: [...state.messages, newMessage] };
-      });
-    };
+  socket.on("newMessage", handleNewMessage);
 
-    socket.on("newMessage", window._messageListeners.newMessage);
-  }
+  // Others remain the same:
+  socket.on("messageStatus", ({ messageId, status }) => {
+    get().updateMessageStatus(messageId, status);
+  });
 
-  // ================== MESSAGE STATUS ==================
-  if (!window._messageListeners.messageStatus) {
-    window._messageListeners.messageStatus = ({ messageId, status }) => {
-      get().updateMessageStatus(messageId, status);
-    };
+  socket.on("messageDeleted", (messageId) => {
+    set((state) => ({
+      messages: state.messages.filter((msg) => msg._id !== messageId),
+    }));
+  });
 
-    socket.on("messageStatus", window._messageListeners.messageStatus);
-  }
+  socket.on("messageReaction", ({ messageId, userId, emoji }) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg._id === messageId
+          ? {
+              ...msg,
+              reactions: [
+                ...(msg.reactions || []).filter((r) => r.userId !== userId),
+                { userId, emoji, createdAt: new Date().toISOString() },
+              ],
+            }
+          : msg
+      ),
+    }));
+  });
 
-  // ================== DELETE MESSAGE ==================
-  if (!window._messageListeners.messageDeleted) {
-    window._messageListeners.messageDeleted = (messageId) => {
-      set((state) => ({
-        messages: state.messages.filter((msg) => msg._id !== messageId),
-      }));
-    };
-
-    socket.on("messageDeleted", window._messageListeners.messageDeleted);
-  }
-
-  // ================== REACTION ADDED ==================
-  if (!window._messageListeners.reactionAdded) {
-    window._messageListeners.reactionAdded = ({ messageId, userId, emoji }) => {
-      set((state) => ({
-        messages: state.messages.map((msg) =>
-          msg._id === messageId
-            ? {
-                ...msg,
-                reactions: [
-                  ...(msg.reactions || []).filter((r) => r.userId !== userId),
-                  { userId, emoji, createdAt: new Date().toISOString() },
-                ],
-              }
-            : msg
-        ),
-      }));
-    };
-
-    socket.on("messageReaction", window._messageListeners.reactionAdded);
-  }
-
-  // ================== REACTION REMOVED ==================
-  if (!window._messageListeners.reactionRemoved) {
-    window._messageListeners.reactionRemoved = ({ messageId, userId }) => {
-      set((state) => ({
-        messages: state.messages.map((msg) =>
-          msg._id === messageId
-            ? {
-                ...msg,
-                reactions: (msg.reactions || []).filter(
-                  (r) => r.userId !== userId
-                ),
-              }
-            : msg
-        ),
-      }));
-    };
-
-    socket.on("messageReactionRemoved", window._messageListeners.reactionRemoved);
-  }
+  socket.on("messageReactionRemoved", ({ messageId, userId }) => {
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg._id === messageId
+          ? {
+              ...msg,
+              reactions: (msg.reactions || []).filter(
+                (r) => r.userId !== userId
+              ),
+            }
+          : msg
+      ),
+    }));
+  });
 },
+
 
 
       unsubscribeFromMessages: () => {
