@@ -25,15 +25,16 @@ function ChatContainer({ onBack }) {
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
-  useEffect(() => {
-    getMessagesByUserId(selectedUser._id);
-    subscribeToMessages();
-    // Clear unread count when opening chat
-    clearUnreadCount(selectedUser._id);
+ useEffect(() => {
+  if (!selectedUser?._id) return;
 
-    // clean up
-    return () => unsubscribeFromMessages();
-  }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages, clearUnreadCount]);
+  getMessagesByUserId(selectedUser._id);
+  subscribeToMessages();
+  clearUnreadCount(selectedUser._id);
+
+  return () => unsubscribeFromMessages();
+}, [selectedUser?._id]);
+
 
   // Scroll to bottom when messages load
   useEffect(() => {

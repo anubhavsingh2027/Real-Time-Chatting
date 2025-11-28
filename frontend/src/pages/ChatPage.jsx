@@ -19,9 +19,9 @@ function ChatPage() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
   // Subscribe to global messages on mount
-  useEffect(() => {
-    subscribeToGlobalMessages();
-  }, [subscribeToGlobalMessages]);
+ useEffect(() => {
+  subscribeToGlobalMessages();
+}, []); 
 
   const handleBack = () => {
     setSelectedUser(null);
