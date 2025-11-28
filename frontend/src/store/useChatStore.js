@@ -153,13 +153,9 @@ export const useChatStore = create(
             ),
           }));
 
-          // Emit the message through socket for real-time update
-          if (socket) {
-            socket.emit("newMessage", {
-              message: actualMessage,
-              receiverId: selectedUser._id,
-            });
-          }
+          // NOTE: Do NOT emit socket event here!
+          // The backend already handles emitting "newMessage" to both sender and receiver
+          // Emitting here causes message duplication on the receiver side
         } catch (error) {
           // Remove optimistic message on failure
           set((state) => ({
@@ -470,13 +466,9 @@ export const useChatStore = create(
           if (!isRelevantMessage) return;
 
           set((state) => {
-            // Check for duplicates
+            // Check for duplicates - match by MongoDB _id
             const messageExists = state.messages.some(
-              (msg) =>
-                msg._id === newMessage._id ||
-                (msg.isOptimistic &&
-                  msg.text === newMessage.text &&
-                  msg.createdAt === newMessage.createdAt)
+              (msg) => msg._id === newMessage._id
             );
 
             if (messageExists) return state;
