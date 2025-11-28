@@ -19,13 +19,15 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
   const [showImageModal, setShowImageModal] = useState(false);
   const [showMenuButton, setShowMenuButton] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const longPressTimer = useRef(null);
   const bubbleRef = useRef(null);
   const imageRef = useRef(null);
-  const { addReaction } = useChatStore();
+  const { addReaction, setSelectedMessage } = useChatStore();
   const { authUser } = useAuthStore();
 
   const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢'];
+  const isLongMessage = (message.text?.length || 0) > 100;
 
   useEffect(() => {
     const onEsc = (e) => {
@@ -257,8 +259,24 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
             )}
 
             {message.text && (
-              <div className="text-sm leading-relaxed break-words whitespace-pre-wrap font-normal overflow-hidden">
-                {message.text}
+              <div className="space-y-2">
+                <div className="text-sm leading-relaxed break-words whitespace-pre-wrap font-normal overflow-hidden">
+                  {isLongMessage && !isExpanded
+                    ? `${message.text.substring(0, 300)}...`
+                    : message.text}
+                </div>
+                {isLongMessage && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className={`text-xs font-semibold px-3 py-1 rounded-md transition-colors ${
+                      isOwnMessage
+                        ? 'bg-emerald-600/30 hover:bg-emerald-600/50 text-white'
+                        : 'bg-slate-600/30 hover:bg-slate-600/50 text-slate-100'
+                    }`}
+                  >
+                    {isExpanded ? '▲ Show Less' : '▼ Read More'}
+                  </button>
+                )}
               </div>
             )}
 
@@ -276,8 +294,8 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
           </motion.div>
 
           <motion.div
-            className={`absolute ${!isOwnMessage ? 'right-[-40px]' : 'left-[-40px]'} transition-all duration-200 ${
-              showMenuButton ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'
+            className={`absolute ${!isOwnMessage ? 'right-[-48px]' : 'left-[-48px]'} transition-all duration-200 ${
+              showMenuButton ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-75'
             }`}
             style={{
               top: '50%',
@@ -288,51 +306,48 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const next = !showActions;
-                setShowActions(next);
+                setSelectedMessage(message);
+                setShowActions(false);
                 setShowReactionPopup(false);
-                setShowMenuButton(true);
-                if (next) {
-                  window.dispatchEvent(new CustomEvent('message-dropdown-open', { detail: { id: message._id } }));
-                }
               }}
-              className={`p-2 rounded-full transition-all duration-150 focus:outline-none shadow-md cursor-pointer ${
-                isOwnMessage ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-slate-600 hover:bg-slate-700'
+              className={`p-2.5 rounded-full transition-all duration-150 focus:outline-none shadow-lg cursor-pointer ring-1 ${
+                isOwnMessage ? 'bg-emerald-500 hover:bg-emerald-600 ring-emerald-400/30 hover:shadow-emerald-500/30' : 'bg-slate-600 hover:bg-slate-700 ring-slate-500/30 hover:shadow-slate-500/30'
               }`}
               aria-label="message actions"
+              title="More options"
             >
-              <ChevronDown className="w-4 h-4 text-white" />
+              <ChevronDown className="w-5 h-5 text-white" />
             </button>
           </motion.div>
 
           <AnimatePresence>
             {showActions && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                initial={{ opacity: 0, scale: 0.85, y: -15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                transition={{ duration: 0.2 }}
+                exit={{ opacity: 0, scale: 0.85, y: -15 }}
+                transition={{ duration: 0.15 }}
                 className={`absolute z-[100] ${
                   isOwnMessage ? 'menu-right' : 'menu-left'
                 }`}
                 style={{
-                  top: 'calc(100% + 6px)',
+                  top: 'calc(100% + 8px)',
                   left: isOwnMessage ? 'auto' : '0',
                   right: isOwnMessage ? '0' : 'auto'
                 }}
               >
-                <div className="rounded-xl shadow-xl py-2 w-52 backdrop-blur-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white ring-1 ring-black/5 dark:ring-white/10">
-                  <div className="px-2">
+                <div className="rounded-2xl shadow-2xl py-1 w-56 backdrop-blur-md bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white ring-1 ring-black/10 dark:ring-white/20 overflow-hidden">
+                  <div className="px-1.5">
                     <button
                       onClick={handleCopyMessage}
-                      className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-3 transition-colors font-medium"
                     >
-                      <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                      Copy
+                      <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span>Copy</span>
                     </button>
                   </div>
 
-                  <div className="px-2">
+                  <div className="px-1.5">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -340,34 +355,35 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                         setShowActions(false);
                         setShowMenuButton(true);
                       }}
-                      className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors"
+                      className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-3 transition-colors font-medium"
                     >
-                      <span className="text-lg">😊</span>
-                      React
+                      <span className="text-xl">😊</span>
+                      <span>React</span>
                     </button>
                   </div>
 
                   {message.image && (
-                    <div className="px-2">
+                    <div className="px-1.5">
                       <button
                         onClick={() => handleDownloadImage(message.image)}
-                        className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 transition-colors"
+                        className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30 flex items-center gap-3 transition-colors font-medium"
                       >
-                        <Download className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                        Download
+                        <Download className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <span>Download</span>
                       </button>
                     </div>
                   )}
 
                   {isOwnMessage && (
                     <>
-                      <div className="my-1 border-t border-gray-100 dark:border-slate-700" />
-                      <div className="px-2">
+                      <div className="my-1.5 border-t border-gray-200 dark:border-slate-700/50" />
+                      <div className="px-1.5">
                         <button
                           onClick={handleDelete}
-                          className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600 transition-colors"
+                          className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 text-red-600 dark:text-red-400 transition-colors font-medium"
                         >
-                          <Trash2 className="w-4 h-4" /> Delete
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
                         </button>
                       </div>
                     </>

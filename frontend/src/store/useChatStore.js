@@ -49,12 +49,14 @@ export const useChatStore = create(
       messageStatuses: {}, // tracks status of each message
       activeTab: "chats",
       selectedUser: null,
+      selectedMessage: null,
       isUsersLoading: false,
       isMessagesLoading: false,
       isSoundEnabled: useSettingsStore.getState().soundEffects,
 
       setActiveTab: (tab) => set({ activeTab: tab }),
       setSelectedUser: (selectedUser) => set({ selectedUser }),
+      setSelectedMessage: (message) => set({ selectedMessage: message }),
 
       getAllContacts: async () => {
         set({ isUsersLoading: true });

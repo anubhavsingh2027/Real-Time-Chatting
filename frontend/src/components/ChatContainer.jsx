@@ -32,6 +32,16 @@ function ChatContainer({ onBack }) {
     return () => unsubscribeFromMessages();
   }, [selectedUser, getMessagesByUserId, subscribeToMessages, unsubscribeFromMessages]);
 
+  // Scroll to bottom when messages load
+  useEffect(() => {
+    if (messages.length > 0 && !isMessagesLoading) {
+      setTimeout(() => {
+        messageEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 0);
+    }
+  }, [isMessagesLoading]);
+
+  // Scroll to bottom on new messages
   useEffect(() => {
     if (!messageEndRef.current || messages.length === 0) return;
 

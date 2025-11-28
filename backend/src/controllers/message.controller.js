@@ -6,7 +6,9 @@ import User from "../models/User.js";
 export const getAllContacts = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    const filteredUsers = await User.find({
+      _id: { $ne: loggedInUserId },
+    }).select("-password");
 
     res.status(200).json(filteredUsers);
   } catch (error) {
@@ -42,7 +44,9 @@ export const sendMessage = async (req, res) => {
       return res.status(400).json({ message: "Text or image is required." });
     }
     if (senderId.equals(receiverId)) {
-      return res.status(400).json({ message: "Cannot send messages to yourself." });
+      return res
+        .status(400)
+        .json({ message: "Cannot send messages to yourself." });
     }
     const receiverExists = await User.exists({ _id: receiverId });
     if (!receiverExists) {
@@ -69,8 +73,8 @@ export const sendMessage = async (req, res) => {
 
     // Populate replyTo and forwardedFrom before sending
     await newMessage.populate([
-      { path: 'replyTo', select: 'text image senderId' },
-      { path: 'forwardedFrom', select: 'text image senderId' },
+      { path: "replyTo", select: "text image senderId" },
+      { path: "forwardedFrom", select: "text image senderId" },
     ]);
 
     const receiverSocketId = getReceiverSocketId(receiverId);
@@ -104,7 +108,9 @@ export const getChatPartners = async (req, res) => {
       ),
     ];
 
-    const chatPartners = await User.find({ _id: { $in: chatPartnerIds } }).select("-password");
+    const chatPartners = await User.find({
+      _id: { $in: chatPartnerIds },
+    }).select("-password");
 
     res.status(200).json(chatPartners);
   } catch (error) {
@@ -126,7 +132,9 @@ export const deleteMessage = async (req, res) => {
 
     // Check if the user is the sender of the message
     if (message.senderId.toString() !== loggedInUserId.toString()) {
-      return res.status(403).json({ error: "You can only delete your own messages" });
+      return res
+        .status(403)
+        .json({ error: "You can only delete your own messages" });
     }
 
     // Delete image from cloudinary if exists

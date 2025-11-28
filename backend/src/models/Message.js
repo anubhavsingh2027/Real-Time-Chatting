@@ -28,17 +28,19 @@ const messageSchema = new mongoose.Schema(
       ref: "Message",
       default: null,
     },
-    reactions: [{
-      userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+    reactions: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        emoji: String,
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
       },
-      emoji: String,
-      createdAt: {
-        type: Date,
-        default: Date.now,
-      },
-    }],
+    ],
   },
   { timestamps: true }
 );
