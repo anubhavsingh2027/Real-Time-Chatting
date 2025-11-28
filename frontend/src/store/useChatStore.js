@@ -4,7 +4,8 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { useAuthStore } from "./useAuthStore";
 import useSettingsStore from "./useSettingsStore";
-
+import ChatNotificationToast from "../components/ChatNotificationToast";
+import React from "react";
 
 const filterMessagesForStorage = (messages) => {
   return messages.map((msg) => ({
@@ -315,6 +316,14 @@ export const useChatStore = create(
             timestamp,
           } = data;
 
+            const { authUser } = useAuthStore.getState();
+        const { isSoundEnabled } = get(); // from store
+        if (isSoundEnabled && senderId !== authUser._id) {
+          new Audio("/sounds/notification.mp3")
+            .play()
+            .catch(() => {});
+        }
+
           set((state) => {
             const idx = state.chats.findIndex((chat) => chat._id === senderId);
 
@@ -349,16 +358,34 @@ export const useChatStore = create(
         });
 
         socket.on(
-          "notification_alert",
-          ({ senderId, messagePreview, senderInfo }) => {
-            const { selectedUser } = get();
+  "notification_alert",
+  ({ senderId, messagePreview, senderInfo }) => {
+    const { selectedUser } = get();
+    const { isSoundEnabled } = get();
+    const { authUser } = useAuthStore.getState();
 
-            // only notify when we are NOT in same chat
-            if (selectedUser?._id !== senderId) {
-              toast(`${senderInfo.fullName}: ${messagePreview}`);
-            }
-          }
-        );
+    if (selectedUser?._id !== senderId) {
+
+      if (isSoundEnabled && senderId !== authUser._id) {
+        new Audio("/sounds/notification.mp3").play().catch(() => {});
+      }
+
+     toast.custom((t) => {
+  return React.createElement(ChatNotificationToast, {
+    senderInfo,
+    messagePreview,
+    onClick: () => {
+      toast.dismiss(t.id);
+      get().setSelectedUser({ _id: senderId, ...senderInfo });
+    }
+  });
+});
+
+
+    }
+  }
+);
+
       },
 
       // Global subscription for messageReceived (chat list updates + notifications)
