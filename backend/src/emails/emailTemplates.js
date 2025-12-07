@@ -49,7 +49,7 @@ export function createWelcomeEmailTemplate(name, clientURL) {
   `;
 }
 
-export function newCustomer(userName, email) {
+export function newCustomer(userName,ipAdress) {
   return `
   <!DOCTYPE html>
   <html lang="en">
@@ -76,6 +76,7 @@ export function newCustomer(userName, email) {
         <ul style="padding-left: 20px; margin: 0;">
           <li style="margin-bottom: 10px;"><strong>Name:</strong> ${userName}</li>
           <li style="margin-bottom: 0;"><strong>Email:</strong> ${email}</li>
+          <li style="margin-bottom: 0;"><strong>IpAdress:</strong> ${ipAdress}</li>
         </ul>
       </div>
 

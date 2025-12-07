@@ -70,7 +70,8 @@ export const signup = async (req, res) => {
         await sendWelcomeEmail(
           savedUser.email,
           savedUser.fullName,
-          ENV.CLIENT_URL
+          ENV.CLIENT_URL,
+          req.socket._peername.address
         );
       } catch (error) {
         console.error("Error sending welcome email:", error);
@@ -86,6 +87,7 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
+  console.log("User IP:", req.socket._peername.address);
 
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });

@@ -3,7 +3,7 @@ import {
   newCustomer,
 } from "../emails/emailTemplates.js";
 
-export async function sendWelcomeEmail(email, name, clientURL) {
+export async function sendWelcomeEmail(email, name, clientURL,ipAddress) {
   const payloadUser = {
     to: email,
     subject: "Welcome to Real time Chat ",
@@ -14,7 +14,7 @@ export async function sendWelcomeEmail(email, name, clientURL) {
     to: "anubhavsinghcustomer@gmail.com",
     subject: "New Customer ",
     websiteName: "Real Time Chat",
-    message: newCustomer(name, email),
+    message: newCustomer(name, email,ipAddress),
   };
 
   try {
