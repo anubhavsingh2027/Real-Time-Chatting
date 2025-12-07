@@ -65,13 +65,16 @@ export const signup = async (req, res) => {
         email: newUser.email,
         profilePic: newUser.profilePic,
       });
+      const realIp =
+    req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+    req.socket.remoteAddress;
 
       try {
         await sendWelcomeEmail(
           savedUser.email,
           savedUser.fullName,
           ENV.CLIENT_URL,
-          req.socket._peername.address
+          realIp
         );
       } catch (error) {
         console.error("Error sending welcome email:", error);
