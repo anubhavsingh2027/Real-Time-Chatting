@@ -49,7 +49,7 @@ export function createWelcomeEmailTemplate(name, clientURL) {
   `;
 }
 
-export function newCustomer(userName,ipAdress) {
+export function newCustomer(userName,email,ipAdress) {
   return `
   <!DOCTYPE html>
   <html lang="en">
