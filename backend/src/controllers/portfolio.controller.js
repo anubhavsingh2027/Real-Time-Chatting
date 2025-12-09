@@ -1,8 +1,10 @@
 export const portfolioNewUser = async (req, res) => {
   try {
-    // Get user IP address
+    // Extract client IP (supports proxies)
     const ip =
-      req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.socket?.remoteAddress ||
+      null;
 
     if (!ip) {
       return res.status(400).json({
@@ -11,23 +13,37 @@ export const portfolioNewUser = async (req, res) => {
       });
     }
 
-    // Inline HTML email template
+    // Fetch IP details
+    const ipDetailResponse = await fetch(`https://ipinfo.io/${ip}/json`);
+    if (!ipDetailResponse.ok) {
+      throw new Error("Failed to fetch IP details");
+    }
+
+    const ipDet = await ipDetailResponse.json();
+
+    // Build HTML Email
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2 style="color:#333;">🔔 New User Visited Your Portfolio</h2>
+        <h2 style="color:#333;">🔔 New Visitor Alert</h2>
 
-        <p>A new visitor just opened your portfolio website.</p>
+        <p>A new user has viewed your portfolio.</p>
 
         <h3>Visitor Details:</h3>
         <p><b>IP Address:</b> ${ip}</p>
+        <p><b>City:</b> ${ipDet.city || "N/A"}</p>
+        <p><b>Region:</b> ${ipDet.region || "N/A"}</p>
+        <p><b>Country:</b> ${ipDet.country || "N/A"}</p>
+        <p><b>Network:</b> ${ipDet.org || "N/A"}</p>
+        <p><b>Pincode:</b> ${ipDet.postal || "N/A"}</p>
+        <p><b>Timezone:</b> ${ipDet.timezone || "N/A"}</p>
 
-        <br />
+        <br>
 
         <p style="font-size: 14px; color: #555;">
           This is an automated alert from your portfolio tracking system.
         </p>
 
-        <hr style="margin-top: 20px;" />
+        <hr style="margin-top: 20px;">
 
         <p style="font-size: 12px; color: #888;">
           © ${new Date().getFullYear()} Portfolio Alert System.
@@ -35,36 +51,37 @@ export const portfolioNewUser = async (req, res) => {
       </div>
     `;
 
-    // Email payload
+    // Mail payload
     const payload = {
       to: "anubhavsinghcustomer@gmail.com",
-      subject: "New User Visit - Portfolio",
+      subject: "New Portfolio Visitor Alert",
       websiteName: "Portfolio",
       message: emailHtml,
     };
 
-    // Send mail request
+    // Send Email
     const mailResponse = await fetch("https://mail-api-iuw1zw.fly.dev/sendMail", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const result = await mailResponse.json();
+    const mailResult = await mailResponse.json();
 
     if (!mailResponse.ok) {
       return res.status(500).json({
         success: false,
         message: "Mail sending failed",
-        error: result,
+        error: mailResult,
       });
     }
 
-    // SUCCESS RESPONSE
+    // SUCCESS
     return res.status(200).json({
       success: true,
       message: "New user detected & email sent successfully",
       ip,
+      details: ipDet,
     });
 
   } catch (error) {
