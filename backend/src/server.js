@@ -9,6 +9,10 @@ import { connectDB } from "./lib/db.js";
 import { ENV } from "./lib/env.js";
 import { app, server } from "./lib/socket.js";
 
+
+//====Extra Router add for my Portfolio =====
+import portfolio from "./routes/portfolioIp.route.js"
+
 const __dirname = path.resolve();
 
 const PORT = ENV.PORT || 3000;
@@ -26,6 +30,9 @@ app.get('/',(req,res,next)=>{
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
+
+//===Extra ====
+app.use("/portfolio",portfolio);
 
 
 server.listen(PORT, () => {
