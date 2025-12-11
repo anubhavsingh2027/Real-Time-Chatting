@@ -1,4 +1,5 @@
 export const portfolioNewUser = async (req, res) => {
+  const websiteName=req.params.websiteName
   try {
     // Extract client IP (supports proxies)
     const ip =
@@ -26,7 +27,7 @@ export const portfolioNewUser = async (req, res) => {
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2 style="color:#333;">🔔 New Visitor Alert</h2>
 
-        <p>A new user has viewed your portfolio.</p>
+        <p>A new user has viewed your {websiteName}.</p>
 
         <h3>Visitor Details:</h3>
         <p><b>IP Address:</b> ${ip}</p>
@@ -54,8 +55,8 @@ export const portfolioNewUser = async (req, res) => {
     // Mail payload
     const payload = {
       to: "anubhavsinghcustomer@gmail.com",
-      subject: "New Portfolio Visitor Alert",
-      websiteName: "Portfolio",
+      subject: `New ${websiteName} Visitor Alert`,
+      websiteName: `#${websiteName}`,
       message: emailHtml,
     };
 
