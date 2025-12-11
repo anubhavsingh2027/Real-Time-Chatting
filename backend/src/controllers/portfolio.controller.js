@@ -41,7 +41,7 @@ export const portfolioNewUser = async (req, res) => {
         <br>
 
         <p style="font-size: 14px; color: #555;">
-          This is an automated alert from your portfolio tracking system.
+          This is an automated alert from your ${websiteName} tracking system.
         </p>
 
         <hr style="margin-top: 20px;">
@@ -77,6 +77,9 @@ export const portfolioNewUser = async (req, res) => {
       });
     }
 
+    if(websiteName==="github"){
+       return res.redirect("https://github.com/anubhavsingh2027");
+    }
     // SUCCESS
     return res.status(200).json({
       success: true,
@@ -87,7 +90,9 @@ export const portfolioNewUser = async (req, res) => {
 
   } catch (error) {
     console.error("Error in portfolioNewUser:", error);
-
+ if(websiteName==="github"){
+       return res.redirect("https://github.com/anubhavsingh2027");
+    }
     return res.status(500).json({
       success: false,
       message: "Internal server error",
