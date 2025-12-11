@@ -41,7 +41,7 @@ app.use("/api/messages", messageRoutes);
 
 
 //===Extra ====
-app.use("/portfolio",portfolio);
+app.use("/detector",portfolio);
 
 
 server.listen(PORT, () => {
