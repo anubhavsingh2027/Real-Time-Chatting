@@ -27,7 +27,7 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
   const { addReaction, setSelectedMessage } = useChatStore();
   const { authUser } = useAuthStore();
 
-  const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢'];
+  const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢','😡','🎊'];
   const isLongMessage = (message.text?.length || 0) > 150;
 
   // Helper to safely get sender name from replyTo
