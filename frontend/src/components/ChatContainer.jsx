@@ -25,6 +25,23 @@ function ChatContainer({ onBack }) {
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
 
+  // Helper to format date
+  const formatDateDivider = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Helper to check if date changed
+  const shouldShowDateDivider = (currentMsg, prevMsg) => {
+    if (!prevMsg) return true;
+    const currentDate = new Date(currentMsg.createdAt).toDateString();
+    const prevDate = new Date(prevMsg.createdAt).toDateString();
+    return currentDate !== prevDate;
+  };
+
  useEffect(() => {
   if (!selectedUser?._id) return;
 
@@ -74,25 +91,36 @@ function ChatContainer({ onBack }) {
   return (
     <div className="h-full flex flex-col">
       <ChatHeader onBack={onBack} />
-      <div className="flex-1 px-3 sm:px-6 overflow-y-auto py-4 sm:py-4 bg-gray-100 dark:bg-slate-800">
+      <div className="flex-1 px-3 sm:px-6 overflow-y-auto py-4 sm:py-4 bg-gray-100 dark:bg-slate-800" style={{ overflow: 'auto', overflowX: 'hidden' }}>
         {messages.length > 0 && !isMessagesLoading ? (
           <div className="max-w-3xl mx-auto space-y-3">
             <AnimatePresence mode="popLayout">
-              {messages.map((msg) => (
-                <MessageBubble
-                  key={msg._id || msg.tempId}
+              {messages.map((msg, index) => (
+                <div key={msg._id || msg.tempId}>
+                  {/* Date Divider */}
+                  {shouldShowDateDivider(msg, messages[index - 1]) && (
+                    <div className="flex items-center gap-3 my-4">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-slate-600 to-transparent"></div>
+                      <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 px-2 py-1 bg-gray-100 dark:bg-slate-700/50 rounded-full whitespace-nowrap">
+                        {formatDateDivider(msg.createdAt)}
+                      </span>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-slate-600 to-transparent"></div>
+                    </div>
+                  )}
 
-                  message={msg}
-                  isOwnMessage={msg.senderId === authUser._id}
-                  messageStatus={
-                    msg.isOptimistic
-                      ? 'sending'
-                      : messageStatuses[msg._id] || 'sent'
-                  }
-                  onDelete={deleteMessage}
-                  onReply={setReplyToMessage}
-                  onForward={setForwardMessage}
-                />
+                  <MessageBubble
+                    message={msg}
+                    isOwnMessage={(typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId) === authUser._id}
+                    messageStatus={
+                      msg.isOptimistic
+                        ? 'sending'
+                        : messageStatuses[msg._id] || 'sent'
+                    }
+                    onDelete={deleteMessage}
+                    onReply={setReplyToMessage}
+                    onForward={setForwardMessage}
+                  />
+                </div>
               ))}
             </AnimatePresence>
             {/* 👇 scroll target */}

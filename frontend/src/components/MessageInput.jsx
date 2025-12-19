@@ -2,14 +2,14 @@ import { useRef, useState } from "react";
 import useKeyboardSound from "../hooks/useKeyboardSound";
 import { useChatStore } from "../store/useChatStore";
 import toast from "react-hot-toast";
-import { ImageIcon, SendIcon, XIcon, PlusIcon, FileIcon } from "lucide-react";
+import { ImageIcon, SendIcon, XIcon, PlusIcon, FileIcon, X } from "lucide-react";
 
 function MessageInput() {
   const { playRandomKeyStrokeSound } = useKeyboardSound();
   const [text, setText] = useState("");
   const [imagePreviews, setImagePreviews] = useState([]);
   const fileInputRef = useRef(null);
-  const { sendMessage, isSoundEnabled } = useChatStore();
+  const { sendMessage, isSoundEnabled, replyToMessage, clearReplyToMessage } = useChatStore();
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -119,6 +119,31 @@ function MessageInput() {
 
   return (
     <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-t border-white/15 dark:border-white/10 transition-all duration-300">
+
+      {/* Reply Preview */}
+      {replyToMessage && (
+        <div className="p-3 border-b border-purple-200 dark:border-purple-900/50 bg-purple-50 dark:bg-purple-900/20 animate-fade-in">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-start gap-2 bg-white dark:bg-slate-800 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">
+                  Replying to...
+                </p>
+                <div className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
+                  {replyToMessage.text || (replyToMessage.image && "📷 Image")}
+                </div>
+              </div>
+              <button
+                onClick={clearReplyToMessage}
+                className="flex-none p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded transition-colors"
+                title="Cancel reply"
+              >
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Image Previews */}
       {imagePreviews.length > 0 && (

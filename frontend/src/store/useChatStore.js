@@ -21,19 +21,21 @@ const uniqueById = (messages) => {
   return [...map.values()];
 };
 
-const normalizeMessage = (msg) => ({
-  ...msg,
-  senderId: typeof msg.senderId === "object" ? msg.senderId._id : msg.senderId,
-  receiverId:
-    typeof msg.receiverId === "object" ? msg.receiverId._id : msg.receiverId,
-});
+const normalizeMessage = (msg) => {
+  // Keep the full object for senderId/receiverId to preserve user details
+  // But ensure replyTo maintains its structure
+  return {
+    ...msg,
+    senderId: msg.senderId, // Keep full object or ID as is
+    receiverId: msg.receiverId, // Keep full object or ID as is
+    replyTo: msg.replyTo ? { ...msg.replyTo } : null,
+  };
+};
 
 // Custom storage for persist middleware
 const customStorage = {
   getItem: (name) => {
     const str = localStorage.getItem(name);
-
-
 
     if (!str) return null;
     const data = JSON.parse(str);
@@ -69,6 +71,8 @@ export const useChatStore = create(
       activeTab: "chats",
       selectedUser: null,
       selectedMessage: null,
+      replyToMessage: null, // for reply-to feature
+      forwardMessage: null, // for forward feature
       isUsersLoading: false,
       isMessagesLoading: false,
       isSoundEnabled: useSettingsStore.getState().soundEffects,
@@ -76,6 +80,10 @@ export const useChatStore = create(
       setActiveTab: (tab) => set({ activeTab: tab }),
       setSelectedUser: (selectedUser) => set({ selectedUser }),
       setSelectedMessage: (message) => set({ selectedMessage: message }),
+      setReplyToMessage: (message) => set({ replyToMessage: message }),
+      clearReplyToMessage: () => set({ replyToMessage: null }),
+      setForwardMessage: (message) => set({ forwardMessage: message }),
+      clearForwardMessage: () => set({ forwardMessage: null }),
 
       getAllContacts: async () => {
         set({ isUsersLoading: true });
@@ -128,7 +136,15 @@ export const useChatStore = create(
                 _id: replyToMessage._id,
                 text: replyToMessage.text,
                 image: replyToMessage.image,
-                senderId: replyToMessage.senderId,
+                senderId:
+                  typeof replyToMessage.senderId === "object"
+                    ? replyToMessage.senderId
+                    : {
+                        _id: replyToMessage.senderId,
+                        fullName: "Unknown",
+                        username: "",
+                        profilePic: "",
+                      },
               }
             : null,
           createdAt: new Date().toISOString(),
@@ -138,7 +154,6 @@ export const useChatStore = create(
         // Update messages without storing image data in state
         set({
           messages: [...messages, normalizeMessage(optimisticMessage)],
-
         });
 
         try {
@@ -168,12 +183,17 @@ export const useChatStore = create(
           // Update messages, replacing optimistic with actual
           set((state) => ({
             messages: uniqueById(
-            state.messages
-              .filter((m) => m._id !== tempId && m.tempId !== actualMessage._id)
-              .concat(normalizeMessage(actualMessage))
-
-          )
-
+              state.messages
+                .filter(
+                  (m) => m._id !== tempId && m.tempId !== actualMessage._id
+                )
+                .concat(normalizeMessage(actualMessage))
+            ),
+            // Set message status to 'sent'
+            messageStatuses: {
+              ...state.messageStatuses,
+              [actualMessage._id]: "sent",
+            },
           }));
 
           // Emit the message through socket for real-time update
@@ -187,12 +207,6 @@ export const useChatStore = create(
             error.response?.data?.message ||
             "Error sending message. Please try again.";
           toast.error(errorMsg);
-
-          if (errorMsg.includes("10 MB")) {
-            setTimeout(() => {
-              window.location.href = "/";
-            }, 2000);
-          }
         }
       },
 
@@ -316,13 +330,11 @@ export const useChatStore = create(
             timestamp,
           } = data;
 
-            const { authUser } = useAuthStore.getState();
-        const { isSoundEnabled } = get(); // from store
-        if (isSoundEnabled && senderId !== authUser._id) {
-          new Audio("/sounds/notification.mp3")
-            .play()
-            .catch(() => {});
-        }
+          const { authUser } = useAuthStore.getState();
+          const { isSoundEnabled } = get(); // from store
+          if (isSoundEnabled && senderId !== authUser._id) {
+            new Audio("/sounds/notification.mp3").play().catch(() => {});
+          }
 
           set((state) => {
             const idx = state.chats.findIndex((chat) => chat._id === senderId);
@@ -358,34 +370,30 @@ export const useChatStore = create(
         });
 
         socket.on(
-  "notification_alert",
-  ({ senderId, messagePreview, senderInfo }) => {
-    const { selectedUser } = get();
-    const { isSoundEnabled } = get();
-    const { authUser } = useAuthStore.getState();
+          "notification_alert",
+          ({ senderId, messagePreview, senderInfo }) => {
+            const { selectedUser } = get();
+            const { isSoundEnabled } = get();
+            const { authUser } = useAuthStore.getState();
 
-    if (selectedUser?._id !== senderId) {
+            if (selectedUser?._id !== senderId) {
+              if (isSoundEnabled && senderId !== authUser._id) {
+                new Audio("/sounds/notification.mp3").play().catch(() => {});
+              }
 
-      if (isSoundEnabled && senderId !== authUser._id) {
-        new Audio("/sounds/notification.mp3").play().catch(() => {});
-      }
-
-     toast.custom((t) => {
-  return React.createElement(ChatNotificationToast, {
-    senderInfo,
-    messagePreview,
-    onClick: () => {
-      toast.dismiss(t.id);
-      get().setSelectedUser({ _id: senderId, ...senderInfo });
-    }
-  });
-});
-
-
-    }
-  }
-);
-
+              toast.custom((t) => {
+                return React.createElement(ChatNotificationToast, {
+                  senderInfo,
+                  messagePreview,
+                  onClick: () => {
+                    toast.dismiss(t.id);
+                    get().setSelectedUser({ _id: senderId, ...senderInfo });
+                  },
+                });
+              });
+            }
+          }
+        );
       },
 
       // Global subscription for messageReceived (chat list updates + notifications)
@@ -428,8 +436,12 @@ export const useChatStore = create(
 
             if (isDuplicate) return state;
 
-            return { messages: uniqueById([...state.messages, normalizeMessage(newMessage)]) };
-
+            return {
+              messages: uniqueById([
+                ...state.messages,
+                normalizeMessage(newMessage),
+              ]),
+            };
           });
         };
 

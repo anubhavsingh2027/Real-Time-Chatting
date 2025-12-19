@@ -4,16 +4,18 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import SettingsPage from "./pages/SettingsPage";
 import { useAuthStore } from "./store/useAuthStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import PageLoader from "./components/PageLoader";
 import useSettingsStore from "./store/useSettingsStore";
 import MessageNotification from "./components/MessageNotification";
+import SplashScreen from "./components/SplashScreen";
 
 import { Toaster } from "react-hot-toast";
 
 function App() {
   const { checkAuth, isCheckingAuth, authUser } = useAuthStore();
   const { theme } = useSettingsStore();
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     checkAuth();
@@ -23,6 +25,10 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
   }, [theme]);
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
 
   if (isCheckingAuth) return <PageLoader />;
 

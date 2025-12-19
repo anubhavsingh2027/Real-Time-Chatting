@@ -6,6 +6,7 @@ import {
   Download,
   Trash2,
   X,
+  Reply,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 import toast from 'react-hot-toast';
@@ -13,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
 
-function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete }) {
+function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete, onReply }) {
   const [showActions, setShowActions] = useState(false);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -27,7 +28,46 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
   const { authUser } = useAuthStore();
 
   const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢'];
-  const isLongMessage = (message.text?.length || 0) > 100;
+  const isLongMessage = (message.text?.length || 0) > 150;
+
+  // Helper to safely get sender name from replyTo
+  const getReplySenderName = () => {
+    if (!message.replyTo?.senderId) return 'Unknown';
+    if (typeof message.replyTo.senderId === 'object') {
+      return message.replyTo.senderId.fullName || 'Unknown';
+    }
+    return 'Unknown';
+  };
+
+  // Helper to render text with clickable links
+  const renderTextWithLinks = (text) => {
+    if (!text) return text;
+
+    // URL regex pattern to detect http, https, www, and other common links
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|ftp:\/\/[^\s]+)/gi;
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        // It's a link
+        const url = part.startsWith('www.') ? `https://${part}` : part;
+        return (
+          <a
+            key={index}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-blue-400 hover:text-blue-300 underline hover:underline-offset-2 transition-colors break-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      // Regular text
+      return <span key={index}>{part}</span>;
+    });
+  };
 
   useEffect(() => {
     const onEsc = (e) => {
@@ -118,6 +158,14 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
     }
   };
 
+  const handleReply = () => {
+    if (!onReply) return;
+    onReply(message);
+    setShowActions(false);
+    setShowMenuButton(false);
+    toast.success('Ready to reply', { duration: 1500 });
+  };
+
   const handleDelete = () => {
     if (!onDelete) return;
     setShowDeleteConfirm(true);
@@ -177,7 +225,7 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
   return (
     <>
       <motion.div
-        className={`w-full flex ${containerAlign} mb-2 px-3`}
+        className={`w-full flex ${containerAlign} mb-2 px-3 relative`}
         ref={bubbleRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -241,6 +289,25 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                 : 'bg-slate-700 text-slate-100 rounded-tl-[4px]'
             }`}
           >
+            {/* Reply Preview */}
+            {message.replyTo && (
+              <div className={`w-full px-3 py-2 rounded-lg border-l-4 mb-2 ${
+                isOwnMessage
+                  ? 'bg-white/20 border-white/60 text-white'
+                  : 'bg-slate-800/40 border-slate-400/60 text-slate-100'
+              }`}>
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="text-lg">↪️</span>
+                  <p className="text-xs font-bold opacity-90">
+                    Replying to {getReplySenderName()}
+                  </p>
+                </div>
+                <p className="text-xs line-clamp-2 opacity-85 pl-5">
+                  {message.replyTo.text || (message.replyTo.image && '📷 Image message')}
+                </p>
+              </div>
+            )}
+
             {message.image && (
               <div
                 className="inline-block w-[280px] aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-black/5 dark:bg-white/5"
@@ -259,19 +326,19 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
             )}
 
             {message.text && (
-              <div className="space-y-2">
+              <div className="space-y-2 max-w-sm">
                 <div className="text-sm leading-relaxed break-words whitespace-pre-wrap font-normal overflow-hidden">
                   {isLongMessage && !isExpanded
-                    ? `${message.text.substring(0, 300)}...`
-                    : message.text}
+                    ? renderTextWithLinks(message.text.substring(0, 200) + '...')
+                    : renderTextWithLinks(message.text)}
                 </div>
                 {isLongMessage && (
                   <button
                     onClick={() => setIsExpanded(!isExpanded)}
                     className={`text-xs font-semibold px-3 py-1 rounded-md transition-colors ${
                       isOwnMessage
-                        ? 'bg-emerald-600/30 hover:bg-emerald-600/50 text-red-500'
-                        : 'bg-slate-600/30 hover:bg-slate-600/50 text-red-500'
+                        ? 'bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-slate-600/30 hover:bg-slate-600/50 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     {isExpanded ? '▲ Show Less' : '▼ Read More'}
@@ -306,9 +373,10 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedMessage(message);
-                setShowActions(false);
+                setShowActions(!showActions);
                 setShowReactionPopup(false);
+                setShowMenuButton(true);
+                window.dispatchEvent(new CustomEvent('message-dropdown-open', { detail: { id: message._id } }));
               }}
               className={`p-2.5 rounded-full transition-all duration-150 focus:outline-none shadow-lg cursor-pointer ring-1 ${
                 isOwnMessage ? 'bg-emerald-500 hover:bg-emerald-600 ring-emerald-400/30 hover:shadow-emerald-500/30' : 'bg-slate-600 hover:bg-slate-700 ring-slate-500/30 hover:shadow-slate-500/30'
@@ -319,24 +387,44 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
               <ChevronDown className="w-5 h-5 text-white" />
             </button>
           </motion.div>
+        </motion.div>
 
-          <AnimatePresence>
-            {showActions && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85, y: -15 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.85, y: -15 }}
-                transition={{ duration: 0.15 }}
-                className={`absolute z-[100] ${
-                  isOwnMessage ? 'menu-right' : 'menu-left'
-                }`}
-                style={{
-                  top: 'calc(100% + 8px)',
-                  left: isOwnMessage ? 'auto' : '0',
-                  right: isOwnMessage ? '0' : 'auto'
-                }}
-              >
-                <div className="rounded-2xl shadow-2xl py-1 w-56 backdrop-blur-md bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white ring-1 ring-black/10 dark:ring-white/20 overflow-hidden">
+        {/* Menu - positioned fixed to viewport */}
+        <AnimatePresence>
+          {showActions && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: -15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: -15 }}
+              transition={{ duration: 0.15 }}
+              className={`fixed z-[50] ${
+                isOwnMessage ? 'menu-right' : 'menu-left'
+              }`}
+              ref={(el) => {
+                if (el && bubbleRef.current) {
+                  const bubbleRect = bubbleRef.current.getBoundingClientRect();
+                  const menuHeight = el.offsetHeight;
+                  const viewportHeight = window.innerHeight;
+
+                  // Position below the message, but flip if too close to bottom
+                  let topPos = bubbleRect.bottom + 8;
+                  if (topPos + menuHeight > viewportHeight - 10) {
+                    topPos = bubbleRect.top - menuHeight - 8;
+                  }
+
+                  el.style.top = `${topPos}px`;
+
+                  if (isOwnMessage) {
+                    el.style.right = `${window.innerWidth - bubbleRect.right}px`;
+                    el.style.left = 'auto';
+                  } else {
+                    el.style.left = `${bubbleRect.left}px`;
+                    el.style.right = 'auto';
+                  }
+                }
+              }}
+            >
+              <div className="rounded-2xl shadow-2xl py-1 w-56 backdrop-blur-md bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white ring-1 ring-black/10 dark:ring-white/20 overflow-hidden">
                   <div className="px-1.5">
                     <button
                       onClick={handleCopyMessage}
@@ -359,6 +447,16 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                     >
                       <span className="text-xl">😊</span>
                       <span>React</span>
+                    </button>
+                  </div>
+
+                  <div className="px-1.5">
+                    <button
+                      onClick={handleReply}
+                      className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-3 transition-colors font-medium"
+                    >
+                      <Reply className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      <span>Reply</span>
                     </button>
                   </div>
 
@@ -391,9 +489,9 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                 </div>
               </motion.div>
             )}
-          </AnimatePresence>
+        </AnimatePresence>
 
-          {message.reactions && message.reactions.length > 0 && (
+        {message.reactions && message.reactions.length > 0 && (
             <motion.div
               layout
               className={`absolute -bottom-2 ${isOwnMessage ? 'right-2' : 'left-2'} bg-white dark:bg-slate-800 rounded-full px-2 py-0.5 shadow-md border border-gray-200 dark:border-slate-700 flex items-center gap-1 text-sm z-10`}
@@ -407,7 +505,6 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
             </motion.div>
           )}
         </motion.div>
-      </motion.div>
 
       {showImageModal && message.image && (
         <div

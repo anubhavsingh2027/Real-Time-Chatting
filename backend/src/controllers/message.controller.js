@@ -26,7 +26,25 @@ export const getMessagesByUserId = async (req, res) => {
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    });
+    })
+      .populate("senderId", "fullName username profilePic")
+      .populate("receiverId", "fullName username profilePic")
+      .populate({
+        path: "replyTo",
+        select: "text image senderId",
+        populate: {
+          path: "senderId",
+          select: "fullName username profilePic",
+        },
+      })
+      .populate({
+        path: "forwardedFrom",
+        select: "text image senderId",
+        populate: {
+          path: "senderId",
+          select: "fullName username profilePic",
+        },
+      });
 
     res.status(200).json(messages);
   } catch (error) {
@@ -71,10 +89,24 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
-    // Populate replyTo and forwardedFrom before sending
+    // Populate replyTo and forwardedFrom with full sender details
     await newMessage.populate([
-      { path: "replyTo", select: "text image senderId" },
-      { path: "forwardedFrom", select: "text image senderId" },
+      {
+        path: "replyTo",
+        select: "text image senderId",
+        populate: {
+          path: "senderId",
+          select: "fullName username profilePic",
+        },
+      },
+      {
+        path: "forwardedFrom",
+        select: "text image senderId",
+        populate: {
+          path: "senderId",
+          select: "fullName username profilePic",
+        },
+      },
     ]);
 
     // Also populate sender info for the frontend
@@ -84,7 +116,6 @@ export const sendMessage = async (req, res) => {
     const receiverSocketId = getReceiverSocketId(receiverId);
     const senderSocketId = getReceiverSocketId(senderId);
 
-    
     // Prepare chat list update data for receiver
     const chatListUpdateData = {
       senderId: senderId.toString(),
@@ -104,7 +135,6 @@ export const sendMessage = async (req, res) => {
 
     // Emit to receiver
     if (receiverSocketId) {
-
       // Emit message to the chat (if receiver has opened the chat)
       io.to(receiverSocketId).emit("newMessage", newMessage);
 
