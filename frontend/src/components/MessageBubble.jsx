@@ -21,10 +21,13 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
   const [showMenuButton, setShowMenuButton] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [swipeX, setSwipeX] = useState(0);
+  const [swipeDistance, setSwipeDistance] = useState(0);
   const longPressTimer = useRef(null);
   const bubbleRef = useRef(null);
   const imageRef = useRef(null);
-  const { addReaction, setSelectedMessage } = useChatStore();
+  const touchStartX = useRef(0);
+  const { addReaction, setSelectedMessage, setReplyToMessage } = useChatStore();
   const { authUser } = useAuthStore();
 
   const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢','😡','🎊'];
@@ -218,6 +221,34 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
 
   const handleTouchEnd = () => {
     clearTimeout(longPressTimer.current);
+
+    // Swipe-to-reply detection (mobile only)
+    const swipeThreshold = 80; // pixels
+    if (Math.abs(swipeDistance) > swipeThreshold) {
+      if (swipeDistance < 0) {
+        // Swiped left
+        setReplyToMessage(message);
+        
+      }
+    }
+    setSwipeDistance(0);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartX.current) return;
+    const currentX = e.touches[0].clientX;
+    const distance = currentX - touchStartX.current;
+    setSwipeDistance(distance);
+    setSwipeX(distance > 0 ? 0 : Math.min(Math.abs(distance), 100));
+  };
+
+  const handleTouchStartSwipe = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    longPressTimer.current = setTimeout(() => {
+      setShowReactionPopup(true);
+      setShowMenuButton(true);
+      window.dispatchEvent(new CustomEvent('message-dropdown-open', { detail: { id: message._id } }));
+    }, 600);
   };
 
   const containerAlign = isOwnMessage ? 'justify-end' : 'justify-start';
@@ -229,7 +260,8 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
         ref={bubbleRef}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onTouchStart={handleTouchStart}
+        onTouchStart={handleTouchStartSwipe}
+        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{
@@ -288,7 +320,18 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                 ? 'bg-emerald-500 text-white rounded-tr-[4px]'
                 : 'bg-slate-700 text-slate-100 rounded-tl-[4px]'
             }`}
+            style={{
+              marginLeft: !isOwnMessage ? `${swipeX}px` : 0,
+              opacity: 1 - (swipeX / 100) * 0.3,
+            }}
           >
+            {/* Swipe to Reply Indicator (Mobile only) */}
+            {swipeX > 0 && !isOwnMessage && (
+              <div className="absolute -left-8 top-1/2 transform -translate-y-1/2 opacity-60">
+                <Reply className="w-5 h-5 text-blue-500 animate-pulse" />
+              </div>
+            )}
+
             {/* Reply Preview */}
             {message.replyTo && (
               <div className={`w-full px-3 py-2 rounded-lg border-l-4 mb-2 ${
@@ -373,16 +416,13 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setShowActions(!showActions);
-                setShowReactionPopup(false);
-                setShowMenuButton(true);
-                window.dispatchEvent(new CustomEvent('message-dropdown-open', { detail: { id: message._id } }));
+                setSelectedMessage(message);
               }}
               className={`p-2.5 rounded-full transition-all duration-150 focus:outline-none shadow-lg cursor-pointer ring-1 ${
                 isOwnMessage ? 'bg-emerald-500 hover:bg-emerald-600 ring-emerald-400/30 hover:shadow-emerald-500/30' : 'bg-slate-600 hover:bg-slate-700 ring-slate-500/30 hover:shadow-slate-500/30'
               }`}
               aria-label="message actions"
-              title="More options"
+              title="View & interact with message"
             >
               <ChevronDown className="w-5 h-5 text-white" />
             </button>
@@ -440,7 +480,7 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowReactionPopup(true);
-                        setShowActions(false);
+                        setShowActions(true);
                         setShowMenuButton(true);
                       }}
                       className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-3 transition-colors font-medium"

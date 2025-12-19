@@ -1,4 +1,4 @@
-import { ArrowLeft, Copy, Trash2, Download, X, AlertTriangle, ChevronDown } from "lucide-react";
+import { ArrowLeft, Copy, Trash2, Download, X, AlertTriangle, ChevronDown, Reply } from "lucide-react";
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
@@ -9,7 +9,7 @@ import MessageViewerModal from "./MessageViewerModal";
 import ProfileModal from "./ProfileModal";
 
 function ChatHeader({ onBack }) {
-  const { selectedUser, setSelectedUser, selectedMessage, setSelectedMessage, deleteMessage } = useChatStore();
+  const { selectedUser, setSelectedUser, selectedMessage, setSelectedMessage, deleteMessage, setReplyToMessage } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const { authUser } = useAuthStore();
   const isOnline = onlineUsers.includes(selectedUser._id);
@@ -18,7 +18,7 @@ function ChatHeader({ onBack }) {
   const [showFullMessage, setShowFullMessage] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢'];
+  const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢','😡','🎊'];
 
   const isLongMessage = (selectedMessage?.text?.length || 0) > 300;
 
@@ -92,6 +92,12 @@ function ChatHeader({ onBack }) {
       console.error(err);
       toast.error('Failed to add reaction');
     }
+  };
+
+  const handleReply = () => {
+    setReplyToMessage(selectedMessage);
+    setSelectedMessage(null);
+
   };
 
   return (
@@ -172,6 +178,14 @@ function ChatHeader({ onBack }) {
                     </motion.div>
                   )}
                 </div>
+
+                <button
+                  onClick={handleReply}
+                  className="p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-purple-600 dark:text-purple-400 transition-colors"
+                  title="Reply to message"
+                >
+                  <Reply className="w-4 h-4" />
+                </button>
 
                 {authUser._id === selectedMessage.senderId && (
                   <button
