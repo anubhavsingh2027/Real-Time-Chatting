@@ -5,7 +5,7 @@ import { io } from "socket.io-client";
 
 const BASE_URL =
   import.meta.env.MODE === "development"
-    ? "https://app.chatting.nav-code.com"
+    ? "http://localhost:3000"
     : "https://app.chatting.nav-code.com";
 
 export const useAuthStore = create((set, get) => ({
@@ -100,5 +100,9 @@ export const useAuthStore = create((set, get) => ({
 
   disconnectSocket: () => {
     if (get().socket?.connected) get().socket.disconnect();
+  },
+
+  setAuthUser: (user) => {
+    set({ authUser: user });
   },
 }));
