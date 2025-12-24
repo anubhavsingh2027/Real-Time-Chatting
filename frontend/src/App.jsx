@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import SettingsPage from "./pages/SettingsPage";
 import AutoLoginPage from "./pages/AutoLoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import { useAuthStore } from "./store/useAuthStore";
 import { useEffect, useState } from "react";
 import PageLoader from "./components/PageLoader";
@@ -46,6 +47,7 @@ function App() {
         <Route path="/settings" element={authUser ? <SettingsPage /> : <Navigate to={"/login"} />} />
         <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to={"/"} />} />
         <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to={"/"} />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
       <MessageNotification />

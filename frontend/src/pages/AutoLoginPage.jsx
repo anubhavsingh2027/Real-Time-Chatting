@@ -96,10 +96,10 @@ function AutoLoginPage() {
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-md flex flex-col items-center justify-center gap-8">
-        
+
         {/* Main Card */}
         <div className="w-full bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-3xl p-8 shadow-2xl">
-          
+
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-transparent bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text mb-2">
