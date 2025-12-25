@@ -82,10 +82,7 @@ export const portfolioNewUser = async (req, res) => {
     }
     // SUCCESS
     return res.status(200).json({
-      success: true,
-      message: "New user detected & email sent successfully",
-      ip,
-      details: ipDet,
+      success: true
     });
 
   } catch (error) {
