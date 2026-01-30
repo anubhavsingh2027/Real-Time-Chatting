@@ -43,7 +43,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={authUser ? <ChatPage /> : <Navigate to={"/login"} />} />
-        <Route path="/alokbhai" element={<AutoLoginPage />} />
+        <Route path="/mash" element={<AutoLoginPage />} />
         <Route path="/settings" element={authUser ? <SettingsPage /> : <Navigate to={"/login"} />} />
         <Route path="/login" element={!authUser ? <LoginPage /> : <Navigate to={"/"} />} />
         <Route path="/signup" element={!authUser ? <SignUpPage /> : <Navigate to={"/"} />} />
