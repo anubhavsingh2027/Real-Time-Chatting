@@ -47,15 +47,20 @@ Built with scalability and performance in mind, it demonstrates the best practic
 
 ## 🛠️ Tech Stack
 
-| Layer                   | Technologies Used                    |
-| ----------------------- | ------------------------------------ |
-| 🖥️ **Frontend**         | React.js, TailwindCSS, Framer Motion |
-| ⚙️ **Backend**          | Node.js, Express.js                  |
-| 🗄️ **Database**         | MongoDB (Mongoose ORM)               |
-| 🔁 **Real-Time Engine** | Socket.io                            |
-| 🔐 **Authentication**   | JSON Web Tokens (JWT), bcrypt.js     |
-| 📨 **Notifications**    | Browser API + Custom Event System    |
-| 🌐 **Version Control**  | Git & GitHub                         |
+| Layer                     | Technologies Used                                |
+| ------------------------- | ------------------------------------------------ |
+| 🖥️ **Frontend**           | React.js, TailwindCSS, Framer Motion             |
+| ⚙️ **Backend**            | Node.js, Express.js                              |
+| 🗄️ **Database**           | MongoDB (Mongoose ORM) + Redis                   |
+| 🔁 **Real-Time Engine**   | Socket.io with Redis adapter (production)        |
+| ⏳ **Job Queue**          | Bull (Message queue processing on Redis)         |
+| 🟥 **Caching & Presence** | Redis (User status, session management, pub/sub) |
+| 📊 **Monitoring**         | Prometheus (Metrics for performance tracking)    |
+| 🔐 **Authentication**     | JWT, bcrypt.js, Socket.io auth middleware        |
+| 🔒 **Security**           | Arcjet (Rate limiting, DDoS protection)          |
+| 📨 **Email Service**      | Resend (Transactional emails, notifications)     |
+| 🖼️ **Image Upload**       | Cloudinary (Image storage & CDN)                 |
+| 🌐 **Version Control**    | Git & GitHub                                     |
 
 ---
 
@@ -145,12 +150,38 @@ Real-Time-Chating/
 
 ---
 
-## 🔐 Authentication Flow
+## 🏗️ Backend Architecture & Data Flow
 
-1. User registers or logs in securely via JWT-based authentication.
-2. Access tokens are stored safely for session persistence.
-3. Socket.io authenticates users during the connection handshake.
-4. Real-time communication begins once validated.
+### **Real-Time Messaging Flow**
+
+1. **Client sends message** → Express API receives request
+2. **Message enqueued** → Bull queue stores in Redis (async processing)
+3. **Queue worker processes** → Saves to MongoDB, publishes event
+4. **Redis pub/sub** → Broadcasts to all connected clients via Socket.io
+5. **Real-time delivery** → Recipients receive instantly through Socket.io
+
+### **Redis Usage**
+
+- **User Presence**: Tracks online/offline status (5-min TTL, auto-refresh)
+- **Message Queue**: Bull jobs for reliable background message processing
+- **Pub/Sub System**: Publishes real-time events (messages, presence changes)
+- **Socket.io Adapter (Production)**: Syncs socket connections across multiple server instances
+- **Session Management**: Stores temporary user session data
+
+### **Authentication Flow**
+
+1. User registers/logs in via JWT-based authentication
+2. JWT token stored in HTTP-only cookies for session persistence
+3. Socket.io authenticates during connection handshake using token
+4. Middleware validates token on every socket event
+5. Real-time communication begins immediately after validation
+
+### **Performance & Monitoring**
+
+- **Prometheus Metrics**: Tracks message count, delivery time, online users, queue size
+- **Health Checks**: `/health` endpoint shows DB & Redis status
+- **Readiness Check**: `/ready` ensures system is fully operational
+- **Automatic Reconnection**: Redis client auto-reconnects with exponential backoff
 
 ---
 
@@ -237,6 +268,5 @@ This project demonstrates:
 It merges **powerful real-time performance** with a **beautiful, user-friendly React interface**, offering a premium chat experience.
 
 > “Code fast. Chat faster.” — _Anubhav Singh_
-
 
 ⭐ **Star this project** on GitHub if you like it!
