@@ -9,7 +9,14 @@ import { ChevronDown } from "lucide-react";
 import ProfileModal from "./ProfileModal";
 
 function ChatsList() {
-  const { getMyChatPartners, chats, isUsersLoading, setSelectedUser, unreadCounts, clearUnreadCount } = useChatStore();
+  const {
+    getMyChatPartners,
+    chats,
+    isUsersLoading,
+    setSelectedUser,
+    unreadCounts,
+    clearUnreadCount,
+  } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedMessageId, setExpandedMessageId] = useState(null);
@@ -32,8 +39,12 @@ function ChatsList() {
       .filter((chat) => smartNameSearch(chat.fullName, searchQuery))
       .sort((a, b) => {
         // Sort exact matches first
-        const aStartsExact = a.fullName.toLowerCase().startsWith(searchQuery.toLowerCase());
-        const bStartsExact = b.fullName.toLowerCase().startsWith(searchQuery.toLowerCase());
+        const aStartsExact = a.fullName
+          .toLowerCase()
+          .startsWith(searchQuery.toLowerCase());
+        const bStartsExact = b.fullName
+          .toLowerCase()
+          .startsWith(searchQuery.toLowerCase());
 
         if (aStartsExact && !bStartsExact) return -1;
         if (!aStartsExact && bStartsExact) return 1;
@@ -48,44 +59,59 @@ function ChatsList() {
 
   return (
     <>
-      <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search chats..." />
+      <SearchInput
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search chats..."
+      />
       {filteredChats.length === 0 ? (
         <div className="px-4">
-          <p className="text-gray-500 dark:text-slate-400 text-center">No chats found</p>
+          <p className="text-gray-500 dark:text-slate-400 text-center">
+            No chats found
+          </p>
         </div>
       ) : (
         <div className="flex flex-col gap-2 p-4">
           {filteredChats.map((chat) => {
             const lastMessage = chat.lastMessage?.text || "";
             const isLongMessage = lastMessage.length > 100;
-            const displayMessage = isLongMessage && expandedMessageId !== chat._id
-              ? `${lastMessage.substring(0, 100)}...`
-              : lastMessage;
+            const displayMessage =
+              isLongMessage && expandedMessageId !== chat._id
+                ? `${lastMessage.substring(0, 100)}...`
+                : lastMessage;
 
             return (
               <div
                 key={chat._id}
-                className="bg-gray-100 dark:bg-cyan-500/10 p-4 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-cyan-500/20 transition-colors"
+                className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-700/50 dark:to-slate-800/50 p-4 rounded-lg cursor-pointer hover:from-gray-100 hover:to-gray-200 dark:hover:from-slate-700 dark:hover:to-slate-700 transition-all duration-200 border border-gray-200 dark:border-slate-600 shadow-sm hover:shadow-md animate-fade-in"
                 onClick={() => handleSelectChat(chat)}
               >
                 <div className="flex items-center gap-3 mb-2">
                   <div
-                    className={`avatar ${onlineUsers.includes(chat._id) ? "online" : "offline"} cursor-pointer hover:opacity-75 transition-opacity`}
+                    className={`avatar ${onlineUsers.includes(chat._id) ? "online" : "offline"} cursor-pointer hover:opacity-75 transition-all duration-200 ring-2 ring-gray-200 dark:ring-slate-600`}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedProfile(chat);
                     }}
                   >
-                    <div className="size-12 rounded-full">
-                      <img src={chat.profilePic || "/avatar.png"} alt={chat.fullName} />
+                    <div className="size-12 rounded-full shadow-md">
+                      <img
+                        src={chat.profilePic || "/avatar.png"}
+                        alt={chat.fullName}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-black dark:text-slate-200 font-medium truncate">@{chat.username}</h4>
+                    <h4 className="text-gray-900 dark:text-slate-100 font-semibold truncate">
+                      @{chat.username}
+                    </h4>
                   </div>
                   {unreadCounts[chat._id] > 0 && (
-                    <div className="flex-shrink-0 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                      {unreadCounts[chat._id] > 99 ? "99+" : unreadCounts[chat._id]}
+                    <div className="flex-shrink-0 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-md animate-pulse-smooth">
+                      {unreadCounts[chat._id] > 99
+                        ? "99+"
+                        : unreadCounts[chat._id]}
                     </div>
                   )}
                 </div>

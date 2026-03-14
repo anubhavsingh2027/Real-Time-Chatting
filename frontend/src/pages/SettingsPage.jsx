@@ -75,7 +75,11 @@ const SettingsPage = () => {
   ];
 
   const handleResetSettings = () => {
-    if (window.confirm("Are you sure you want to reset all settings to default values?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to reset all settings to default values?",
+      )
+    ) {
       settings.resetSettings();
       toast.success("Settings reset to defaults");
     }
@@ -101,8 +105,9 @@ const SettingsPage = () => {
       try {
         await updateProfile({ profilePic: reader.result });
       } catch (error) {
-        console.error("Profile update error:", error);
-        toast.error(error.response?.data?.message || "Failed to update profile picture");
+        toast.error(
+          error.response?.data?.message || "Failed to update profile picture",
+        );
       } finally {
         setIsUpdatingProfile(false);
       }
@@ -120,7 +125,9 @@ const SettingsPage = () => {
   const ToggleSwitch = ({ checked, onChange, label, description }) => (
     <div className="flex items-start justify-between py-3 border-b border-gray-200 dark:border-gray-700">
       <div className="flex-1 pr-4">
-        <label className="text-sm font-medium cursor-pointer select-none">{label}</label>
+        <label className="text-sm font-medium cursor-pointer select-none">
+          {label}
+        </label>
         {description && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {description}
@@ -152,28 +159,30 @@ const SettingsPage = () => {
   );
 
   return (
-    <div className="min-h-screen w-full bg-gray-100 dark:bg-gray-800 text-black dark:text-white">
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-50 to-white dark:from-slate-900 dark:to-slate-800 text-gray-900 dark:text-white">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm sticky top-0 z-40">
+      <header className="bg-white dark:bg-slate-800 border-b-2 border-gray-200 dark:border-slate-700 shadow-sm sticky top-0 z-40">
         <nav className="w-full px-3 sm:px-4 md:px-6 lg:px-8">
           <div className="flex items-center h-16">
             <div className="flex-none">
               <button
                 onClick={() => navigate("/")}
-                className="inline-flex items-center justify-center w-10 h-10 text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="inline-flex items-center justify-center w-10 h-10 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-all duration-200 active:scale-95 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                 aria-label="Go back"
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="flex items-center gap-3 ml-3">
-              <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center">
+            <div className="flex items-center gap-3 ml-3 animate-fade-in">
+              <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center shadow-md">
                 <SettingsIcon className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Settings</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-slate-100">
+                  Settings
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-slate-400 hidden sm:block">
                   {authUser?.fullName}
                 </p>
               </div>
@@ -183,13 +192,13 @@ const SettingsPage = () => {
           {/* Search Bar */}
           <div className="py-4">
             <div className="relative max-w-3xl mx-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-slate-500 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search settings..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder:text-gray-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500 transition-all duration-200 shadow-sm"
               />
             </div>
           </div>
@@ -204,26 +213,36 @@ const SettingsPage = () => {
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
               <button
                 type="button"
-                onClick={() => toggleSection('profile')}
+                onClick={() => toggleSection("profile")}
                 className="flex items-center justify-between w-full p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg transition-colors duration-200 ${
-                    expandedSections.profile
-                      ? 'bg-cyan-500/15 text-cyan-500'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500'
-                  }`}>
+                  <div
+                    className={`p-3 rounded-lg transition-colors duration-200 ${
+                      expandedSections.profile
+                        ? "bg-cyan-500/15 text-cyan-500"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500"
+                    }`}
+                  >
                     <User className="w-6 h-6" />
                   </div>
-                  <h3 className={`text-lg font-semibold transition-colors duration-200 ${
-                    expandedSections.profile
-                      ? 'text-cyan-500'
-                      : 'text-gray-800 dark:text-gray-100'
-                  }`}>Profile</h3>
+                  <h3
+                    className={`text-lg font-semibold transition-colors duration-200 ${
+                      expandedSections.profile
+                        ? "text-cyan-500"
+                        : "text-gray-800 dark:text-gray-100"
+                    }`}
+                  >
+                    Profile
+                  </h3>
                 </div>
-                <ChevronDown className={`w-5 h-5 transform transition-transform duration-300 ${
-                  expandedSections.profile ? 'rotate-180 text-cyan-500' : 'text-gray-500 dark:text-gray-400'
-                }`} />
+                <ChevronDown
+                  className={`w-5 h-5 transform transition-transform duration-300 ${
+                    expandedSections.profile
+                      ? "rotate-180 text-cyan-500"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
               </button>
               {expandedSections.profile && (
                 <div className="px-6 pb-6 border-t border-gray-200 dark:border-gray-800">
@@ -298,7 +317,9 @@ const SettingsPage = () => {
                         Username
                       </label>
                       <div className="flex items-center gap-3 mt-3">
-                        <span className="text-xl font-bold text-cyan-500/70">@</span>
+                        <span className="text-xl font-bold text-cyan-500/70">
+                          @
+                        </span>
                         <p className="text-base font-semibold text-gray-900 dark:text-white">
                           {authUser?.username}
                         </p>
@@ -310,11 +331,14 @@ const SettingsPage = () => {
                         Member Since
                       </label>
                       <p className="text-base text-gray-900 dark:text-white mt-3">
-                        {new Date(authUser?.createdAt).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
+                        {new Date(authUser?.createdAt).toLocaleDateString(
+                          undefined,
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          },
+                        )}
                       </p>
                     </div>
                   </div>
@@ -328,26 +352,36 @@ const SettingsPage = () => {
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
               <button
                 type="button"
-                onClick={() => toggleSection('notifications')}
+                onClick={() => toggleSection("notifications")}
                 className="flex items-center justify-between w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg transition-colors duration-200 ${
-                    expandedSections.notifications
-                      ? 'bg-cyan-500/15 text-cyan-500'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500'
-                  }`}>
+                  <div
+                    className={`p-3 rounded-lg transition-colors duration-200 ${
+                      expandedSections.notifications
+                        ? "bg-cyan-500/15 text-cyan-500"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500"
+                    }`}
+                  >
                     <Bell className="w-6 h-6" />
                   </div>
-                  <h3 className={`text-lg font-semibold transition-colors duration-200 ${
-                    expandedSections.notifications
-                      ? 'text-cyan-500'
-                      : 'text-gray-800 dark:text-gray-100'
-                  }`}>Notifications & Sounds</h3>
+                  <h3
+                    className={`text-lg font-semibold transition-colors duration-200 ${
+                      expandedSections.notifications
+                        ? "text-cyan-500"
+                        : "text-gray-800 dark:text-gray-100"
+                    }`}
+                  >
+                    Notifications & Sounds
+                  </h3>
                 </div>
-                <ChevronDown className={`w-5 h-5 transform transition-transform duration-300 ${
-                  expandedSections.notifications ? 'rotate-180 text-cyan-500' : 'text-gray-500 dark:text-gray-400'
-                }`} />
+                <ChevronDown
+                  className={`w-5 h-5 transform transition-transform duration-300 ${
+                    expandedSections.notifications
+                      ? "rotate-180 text-cyan-500"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
               </button>
               {expandedSections.notifications && (
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 space-y-2">
@@ -385,26 +419,36 @@ const SettingsPage = () => {
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
               <button
                 type="button"
-                onClick={() => toggleSection('appearance')}
+                onClick={() => toggleSection("appearance")}
                 className="flex items-center justify-between w-full p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer group"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-lg transition-colors duration-200 ${
-                    expandedSections.appearance
-                      ? 'bg-cyan-500/15 text-cyan-500'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500'
-                  }`}>
+                  <div
+                    className={`p-3 rounded-lg transition-colors duration-200 ${
+                      expandedSections.appearance
+                        ? "bg-cyan-500/15 text-cyan-500"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:text-cyan-500"
+                    }`}
+                  >
                     <Palette className="w-6 h-6" />
                   </div>
-                  <h3 className={`text-lg font-semibold transition-colors duration-200 ${
-                    expandedSections.appearance
-                      ? 'text-cyan-500'
-                      : 'text-gray-800 dark:text-gray-100'
-                  }`}>Appearance</h3>
+                  <h3
+                    className={`text-lg font-semibold transition-colors duration-200 ${
+                      expandedSections.appearance
+                        ? "text-cyan-500"
+                        : "text-gray-800 dark:text-gray-100"
+                    }`}
+                  >
+                    Appearance
+                  </h3>
                 </div>
-                <ChevronDown className={`w-5 h-5 transform transition-transform duration-300 ${
-                  expandedSections.appearance ? 'rotate-180 text-cyan-500' : 'text-gray-500 dark:text-gray-400'
-                }`} />
+                <ChevronDown
+                  className={`w-5 h-5 transform transition-transform duration-300 ${
+                    expandedSections.appearance
+                      ? "rotate-180 text-cyan-500"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                />
               </button>
               {expandedSections.appearance && (
                 <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-800 space-y-4">

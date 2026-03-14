@@ -109,7 +109,6 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
       setShowReactionPopup(false);
       setShowMenuButton(false);
     } catch (err) {
-      console.error(err);
       toast.error('Failed to add reaction');
     }
   };

@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import BorderAnimatedContainer from "../components/BorderAnimatedContainer";
-import { MessageCircleIcon, MailIcon, LoaderIcon, LockIcon } from "lucide-react";
+import {
+  MessageCircleIcon,
+  MailIcon,
+  LoaderIcon,
+  LockIcon,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 function LoginPage() {
@@ -17,15 +22,19 @@ function LoginPage() {
     <div className="w-full flex items-center justify-center p-4">
       <div className="relative w-full max-w-6xl md:h-[800px] h-[650px]">
         <BorderAnimatedContainer>
-          <div className="w-full flex flex-col md:flex-row">
+          <div className="w-full flex flex-col md:flex-row bg-white dark:bg-slate-800">
             {/* FORM CLOUMN - LEFT SIDE */}
-            <div className="md:w-1/2 p-8 flex items-center justify-center md:border-r border-gray-200 dark:border-slate-600/30">
+            <div className="md:w-1/2 p-8 flex items-center justify-center md:border-r border-gray-200 dark:border-slate-700 bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-900 animate-fade-in">
               <div className="w-full max-w-md">
                 {/* HEADING TEXT */}
-                <div className="text-center mb-8">
-                  <MessageCircleIcon className="w-12 h-12 mx-auto text-gray-500 dark:text-slate-400 mb-4" />
-                  <h2 className="text-2xl font-bold text-black dark:text-slate-200 mb-2">Welcome Back</h2>
-                  <p className="text-gray-500 dark:text-slate-400">Login to access to your account</p>
+                <div className="text-center mb-8 animate-fade-in-up">
+                  <MessageCircleIcon className="w-14 h-14 mx-auto text-gradient-to-r from-cyan-600 to-blue-600 mb-4" />
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2">
+                    Welcome Back
+                  </h2>
+                  <p className="text-gray-600 dark:text-slate-400 text-lg">
+                    Login to access your account
+                  </p>
                 </div>
 
                 {/* FORM */}
@@ -39,7 +48,9 @@ function LoginPage() {
                       <input
                         type="email"
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
                         className="input"
                         placeholder="johndoe@gmail.com"
                       />
@@ -55,7 +66,9 @@ function LoginPage() {
                       <input
                         type="password"
                         value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
                         className="input"
                         placeholder="Enter your password"
                       />
@@ -63,7 +76,11 @@ function LoginPage() {
                   </div>
 
                   {/* SUBMIT BUTTON */}
-                  <button className="auth-btn" type="submit" disabled={isLoggingIn}>
+                  <button
+                    className="auth-btn"
+                    type="submit"
+                    disabled={isLoggingIn}
+                  >
                     {isLoggingIn ? (
                       <LoaderIcon className="w-full h-5 animate-spin text-center" />
                     ) : (
@@ -89,7 +106,9 @@ function LoginPage() {
                   className="w-full h-auto object-contain"
                 />
                 <div className="mt-6 text-center">
-                  <h3 className="text-xl font-medium text-cyan-500 dark:text-cyan-400">Connect anytime, anywhere</h3>
+                  <h3 className="text-xl font-medium text-cyan-500 dark:text-cyan-400">
+                    Connect anytime, anywhere
+                  </h3>
 
                   <div className="mt-4 flex justify-center gap-4">
                     <span className="auth-badge">Free</span>

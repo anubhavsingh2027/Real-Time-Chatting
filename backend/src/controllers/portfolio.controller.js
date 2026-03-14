@@ -86,7 +86,7 @@ export const portfolioNewUser = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error in portfolioNewUser:", error);
+    
  if(websiteName==="github"){
        return res.redirect("https://github.com/anubhavsingh2027");
     }

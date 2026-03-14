@@ -1,4 +1,13 @@
-import { ArrowLeft, Copy, Trash2, Download, X, AlertTriangle, ChevronDown, Reply } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  Trash2,
+  Download,
+  X,
+  AlertTriangle,
+  ChevronDown,
+  Reply,
+} from "lucide-react";
 import { useChatStore } from "../store/useChatStore";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
@@ -9,7 +18,14 @@ import MessageViewerModal from "./MessageViewerModal";
 import ProfileModal from "./ProfileModal";
 
 function ChatHeader({ onBack }) {
-  const { selectedUser, setSelectedUser, selectedMessage, setSelectedMessage, deleteMessage, setReplyToMessage } = useChatStore();
+  const {
+    selectedUser,
+    setSelectedUser,
+    selectedMessage,
+    setSelectedMessage,
+    deleteMessage,
+    setReplyToMessage,
+  } = useChatStore();
   const { onlineUsers } = useAuthStore();
   const { authUser } = useAuthStore();
   const isOnline = onlineUsers.includes(selectedUser._id);
@@ -18,7 +34,7 @@ function ChatHeader({ onBack }) {
   const [showFullMessage, setShowFullMessage] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢','😡','🎊'];
+  const reactions = ["❤️", "👍", "😊", "😂", "😮", "😢", "😡", "🎊"];
 
   const isLongMessage = (selectedMessage?.text?.length || 0) > 300;
 
@@ -41,12 +57,12 @@ function ChatHeader({ onBack }) {
 
   const handleCopyMessage = async () => {
     try {
-      await navigator.clipboard.writeText(selectedMessage.text || '');
-      toast.success('Copied to clipboard');
+      await navigator.clipboard.writeText(selectedMessage.text || "");
+      toast.success("Copied to clipboard");
       setShowEmojiPicker(false);
       setSelectedMessage(null);
     } catch {
-      toast.error('Failed to copy');
+      toast.error("Failed to copy");
     }
   };
 
@@ -54,18 +70,18 @@ function ChatHeader({ onBack }) {
     try {
       const res = await fetch(url);
       const blob = await res.blob();
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
-      const ext = (blob.type || 'image/jpeg').split('/')[1] || 'jpg';
+      const ext = (blob.type || "image/jpeg").split("/")[1] || "jpg";
       link.download = `image-${Date.now()}.${ext}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('Download started');
+      toast.success("Download started");
       setShowEmojiPicker(false);
       setSelectedMessage(null);
     } catch {
-      toast.error('Download failed');
+      toast.error("Download failed");
     }
   };
 
@@ -78,26 +94,25 @@ function ChatHeader({ onBack }) {
     setShowEmojiPicker(false);
     setSelectedMessage(null);
     setShowDeleteConfirm(false);
-    toast.success('Message deleted');
+    toast.success("Message deleted");
   };
 
   const handleAddReaction = async (emoji) => {
     try {
       const { addReaction } = useChatStore.getState();
       await addReaction(selectedMessage._id, emoji);
-      toast.success('Reaction added');
+      toast.success("Reaction added");
       setShowEmojiPicker(false);
       setSelectedMessage(null);
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to add reaction');
+      
+      toast.error("Failed to add reaction");
     }
   };
 
   const handleReply = () => {
     setReplyToMessage(selectedMessage);
     setSelectedMessage(null);
-
   };
 
   return (
@@ -108,15 +123,19 @@ function ChatHeader({ onBack }) {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-slate-700 dark:to-slate-600 border-b border-emerald-200 dark:border-slate-600 px-4 py-3"
+            transition={{ duration: 0.3, type: "spring", stiffness: 200 }}
+            className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/30 dark:via-amber-900/20 dark:to-orange-900/30 border-b-2 border-amber-300 dark:border-amber-700 px-4 py-3 shadow-md"
           >
             <div className="flex items-center justify-between gap-3 max-w-5xl mx-auto">
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Selected Message:</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
+                  Selected Message:
+                </p>
                 <div className="flex items-start gap-2">
                   <p className="text-sm text-gray-600 dark:text-gray-300 truncate whitespace-pre-wrap break-words line-clamp-2">
-                    {isLongMessage ? `${selectedMessage.text?.substring(0, 150)}...` : (selectedMessage.text || '(Image only)')}
+                    {isLongMessage
+                      ? `${selectedMessage.text?.substring(0, 150)}...`
+                      : selectedMessage.text || "(Image only)"}
                   </p>
                   {isLongMessage && (
                     <button
@@ -134,7 +153,7 @@ function ChatHeader({ onBack }) {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={handleCopyMessage}
-                  className="p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 transition-colors"
+                  className="p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
                   title="Copy message"
                 >
                   <Copy className="w-4 h-4" />
@@ -143,7 +162,7 @@ function ChatHeader({ onBack }) {
                 {selectedMessage.image && (
                   <button
                     onClick={() => handleDownloadImage(selectedMessage.image)}
-                    className="p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-600 dark:text-amber-400 transition-colors"
+                    className="p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-600 dark:text-amber-400 transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
                     title="Download image"
                   >
                     <Download className="w-4 h-4" />
@@ -219,7 +238,10 @@ function ChatHeader({ onBack }) {
             <ArrowLeft className="w-6 h-6" />
           </button>
 
-          <div className="flex items-center gap-3 cursor-pointer hover:opacity-75 transition-opacity" onClick={() => setShowProfile(true)}>
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:opacity-75 transition-opacity"
+            onClick={() => setShowProfile(true)}
+          >
             <div className="w-10 h-10 rounded-full overflow-hidden">
               <img
                 src={selectedUser.profilePic || "/avatar.png"}
@@ -229,7 +251,9 @@ function ChatHeader({ onBack }) {
             </div>
 
             <div>
-              <h3 className="text-black dark:text-white font-medium leading-tight">@{selectedUser.username}</h3>
+              <h3 className="text-black dark:text-white font-medium leading-tight">
+                @{selectedUser.username}
+              </h3>
               <p className="text-gray-500 dark:text-slate-300 text-sm leading-tight">
                 {isOnline ? "Online" : "Offline"}
               </p>
@@ -259,7 +283,7 @@ function ChatHeader({ onBack }) {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={confirmDeleteMessage}
         title="Delete Message?"
-        message={`Are you sure you want to delete this message? This action cannot be undone.\n\n"${selectedMessage?.text?.substring(0, 50)}${(selectedMessage?.text?.length || 0) > 50 ? '...' : ''}"`}
+        message={`Are you sure you want to delete this message? This action cannot be undone.\n\n"${selectedMessage?.text?.substring(0, 50)}${(selectedMessage?.text?.length || 0) > 50 ? "..." : ""}"`}
         confirmText="Delete"
         cancelText="Cancel"
         icon="🗑️"

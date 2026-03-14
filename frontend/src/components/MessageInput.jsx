@@ -2,14 +2,22 @@ import { useRef, useState } from "react";
 import useKeyboardSound from "../hooks/useKeyboardSound";
 import { useChatStore } from "../store/useChatStore";
 import toast from "react-hot-toast";
-import { ImageIcon, SendIcon, XIcon, PlusIcon, FileIcon, X } from "lucide-react";
+import {
+  ImageIcon,
+  SendIcon,
+  XIcon,
+  PlusIcon,
+  FileIcon,
+  X,
+} from "lucide-react";
 
 function MessageInput() {
   const { playRandomKeyStrokeSound } = useKeyboardSound();
   const [text, setText] = useState("");
   const [imagePreviews, setImagePreviews] = useState([]);
   const fileInputRef = useRef(null);
-  const { sendMessage, isSoundEnabled, replyToMessage, clearReplyToMessage } = useChatStore();
+  const { sendMessage, isSoundEnabled, replyToMessage, clearReplyToMessage } =
+    useChatStore();
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -39,14 +47,16 @@ function MessageInput() {
 
             return true;
           } catch (error) {
-            throw new Error(`Failed to send ${img.name}: image less than 10 mb`);
+            throw new Error(
+              `Failed to send ${img.name}: image less than 10 mb`,
+            );
           }
-        })
+        }),
       );
 
       // Handle results
       results.forEach((result, index) => {
-        if (result.status === 'rejected') {
+        if (result.status === "rejected") {
           toast.error(result.reason.message);
         }
       });
@@ -103,7 +113,7 @@ function MessageInput() {
     // Read all valid files in parallel
     const newPreviews = await Promise.all(validFiles.map(readFile));
 
-    setImagePreviews(prev => [...prev, ...newPreviews]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -119,11 +129,10 @@ function MessageInput() {
 
   return (
     <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-lg border-t border-white/15 dark:border-white/10 transition-all duration-300">
-
       {/* Reply Preview */}
       {replyToMessage && (
-        <div className="p-3 border-b border-purple-200 dark:border-purple-900/50 bg-purple-50 dark:bg-purple-900/20 animate-fade-in">
-          <div className="max-w-3xl mx-auto">
+        <div className="p-3 sm:p-4 border-b border-purple-200 dark:border-purple-900/50 bg-purple-50 dark:bg-purple-900/20 animate-fade-in">
+          <div className="px-0">
             <div className="flex items-start gap-2 bg-white dark:bg-slate-800 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">
@@ -147,8 +156,8 @@ function MessageInput() {
 
       {/* Image Previews */}
       {imagePreviews.length > 0 && (
-        <div className="p-3 border-b border-gray-200 dark:border-slate-700 animate-fade-in">
-          <div className="max-w-3xl mx-auto space-y-2">
+        <div className="p-3 sm:p-4 border-b border-gray-200 dark:border-slate-700 animate-fade-in">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Attached Images ({imagePreviews.length}/5)
@@ -181,8 +190,12 @@ function MessageInput() {
                   </button>
 
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-transparent to-transparent px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <p className="text-[11px] text-white truncate">{img.name}</p>
-                    <p className="text-[10px] text-gray-300">{formatFileSize(img.size)}</p>
+                    <p className="text-[11px] text-white truncate">
+                      {img.name}
+                    </p>
+                    <p className="text-[10px] text-gray-300">
+                      {formatFileSize(img.size)}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -205,15 +218,15 @@ function MessageInput() {
       )}
 
       {/* Input Area */}
-      <form onSubmit={handleSendMessage} className="p-3">
-        <div className="max-w-3xl mx-auto flex items-center space-x-2">
+      <form onSubmit={handleSendMessage} className="p-3 sm:p-4">
+        <div className="flex items-center space-x-2">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className={`flex-none p-3 rounded-full transition-colors ${
+            className={`flex-none p-2.5 sm:p-3 rounded-full transition-all transform hover:scale-110 duration-200 shadow-sm hover:shadow-md ${
               imagePreviews.length > 0
-                ? "text-emerald-500 bg-emerald-100 dark:bg-emerald-900/30"
-                : "text-gray-500 hover:bg-gray-200 dark:hover:bg-slate-800"
+                ? "text-emerald-500 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60"
+                : "text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700"
             }`}
             title="Attach image"
           >
@@ -233,7 +246,7 @@ function MessageInput() {
                   handleSendMessage(e);
                 }
               }}
-              className="w-full bg-gray-100 dark:bg-slate-800 rounded-2xl py-3 px-4 pr-12 text-sm text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder:text-gray-500 dark:placeholder:text-slate-400 resize-none min-h-12 max-h-32 font-normal whitespace-pre-wrap"
+              className="w-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl py-3 px-4 pr-12 text-sm text-black dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all resize-none min-h-12 max-h-40 font-normal whitespace-pre-wrap hover:border-gray-300 dark:hover:border-slate-600"
               placeholder={
                 imagePreviews.length > 0
                   ? "Add a caption (optional)..."
@@ -264,7 +277,7 @@ function MessageInput() {
           <button
             type="submit"
             disabled={!text.trim() && imagePreviews.length === 0}
-            className="flex-none p-3 text-white rounded-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:scale-105 disabled:transform-none"
+            className="flex-none p-2.5 sm:p-3 text-white rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md hover:shadow-lg transform hover:scale-110 disabled:hover:scale-100 active:scale-95"
           >
             <SendIcon className="w-5 h-5" />
           </button>

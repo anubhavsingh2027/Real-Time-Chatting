@@ -3,10 +3,11 @@ import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
+const nodeEnv = import.meta.env.VITE_NODE_ENV || "development";
 const BASE_URL =
-  import.meta.env.MODE === "development"
-    ? "http://localhost:3000"
-    : "https://app.chatting.nav-code.com";
+  nodeEnv === "production"
+    ? import.meta.env.VITE_BACKEND_PRODUCTION_URL
+    : import.meta.env.VITE_BACKEND_DEVELOPMENT_URL;
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,

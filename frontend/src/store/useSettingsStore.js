@@ -27,7 +27,7 @@ const useSettingsStore = create(
         set((state) => ({ notificationPreview: !state.notificationPreview })),
 
       // Appearance
-      theme: "dark",
+      theme: "light",
       setTheme: (theme) => set((state) => ({ theme })),
       fontSize: "medium",
       setFontSize: (size) => set((state) => ({ fontSize: size })),
@@ -132,8 +132,8 @@ const useSettingsStore = create(
     }),
     {
       name: "chat-settings-storage",
-    }
-  )
+    },
+  ),
 );
 
 export default useSettingsStore;

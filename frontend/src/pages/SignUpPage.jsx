@@ -1,16 +1,28 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import BorderAnimatedContainer from "../components/BorderAnimatedContainer";
-import { MessageCircleIcon, LockIcon, MailIcon, UserIcon, LoaderIcon, Info } from "lucide-react";
+import {
+  MessageCircleIcon,
+  LockIcon,
+  MailIcon,
+  UserIcon,
+  LoaderIcon,
+  Info,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 function SignUpPage() {
-  const [formData, setFormData] = useState({ fullName: "", username: "", email: "", password: "" });
+  const [formData, setFormData] = useState({
+    fullName: "",
+    username: "",
+    email: "",
+    password: "",
+  });
   const { signup, isSigningUp } = useAuthStore();
 
   // Generate normalized username (lowercase, no spaces)
   const normalizedUsername = formData.username
-    .replace(/\s+/g, '')
+    .replace(/\s+/g, "")
     .toLowerCase();
 
   const handleSubmit = (e) => {
@@ -23,18 +35,22 @@ function SignUpPage() {
   };
 
   return (
-    <div className="w-full flex items-center justify-center p-4 bg-slate-900">
+    <div className="w-full flex items-center justify-center p-4">
       <div className="relative w-full max-w-6xl md:h-[800px] h-[650px]">
         <BorderAnimatedContainer>
-          <div className="w-full flex flex-col md:flex-row">
-            {/* FORM CLOUMN - LEFT SIDE */}
-            <div className="md:w-1/2 p-8 flex items-center justify-center md:border-r border-slate-600/30">
+          <div className="w-full flex flex-col md:flex-row bg-white dark:bg-slate-800">
+            {/* FORM COLUMN - LEFT SIDE */}
+            <div className="md:w-1/2 p-8 flex items-center justify-center md:border-r border-gray-200 dark:border-slate-700 bg-gradient-to-br from-white to-gray-50 dark:from-slate-800 dark:to-slate-900 animate-fade-in">
               <div className="w-full max-w-md">
                 {/* HEADING TEXT */}
-                <div className="text-center mb-8">
-                  <MessageCircleIcon className="w-12 h-12 mx-auto text-slate-400 mb-4" />
-                  <h2 className="text-2xl font-bold text-slate-200 mb-2">Create Account</h2>
-                  <p className="text-slate-400">Sign up for a new account</p>
+                <div className="text-center mb-8 animate-fade-in-up">
+                  <MessageCircleIcon className="w-14 h-14 mx-auto text-cyan-600 dark:text-cyan-400 mb-4" />
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-2">
+                    Create Account
+                  </h2>
+                  <p className="text-gray-600 dark:text-slate-400 text-lg">
+                    Sign up for a new account
+                  </p>
                 </div>
 
                 {/* FORM */}
@@ -48,7 +64,9 @@ function SignUpPage() {
                       <input
                         type="text"
                         value={formData.fullName}
-                        onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, fullName: e.target.value })
+                        }
                         className="input"
                         placeholder="John Doe"
                       />
@@ -64,7 +82,9 @@ function SignUpPage() {
                       <input
                         type="text"
                         value={formData.username}
-                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, username: e.target.value })
+                        }
                         className="input"
                         placeholder="johndoe"
                       />
@@ -75,7 +95,9 @@ function SignUpPage() {
                       <div className="mt-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-start gap-2">
                         <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-xs text-blue-300 font-medium mb-1">Your username will be:</p>
+                          <p className="text-xs text-blue-300 font-medium mb-1">
+                            Your username will be:
+                          </p>
                           <p className="text-sm font-mono font-bold text-blue-400 break-all">
                             {normalizedUsername}
                           </p>
@@ -93,7 +115,9 @@ function SignUpPage() {
                       <input
                         type="email"
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
                         className="input"
                         placeholder="johndoe@gmail.com"
                       />
@@ -109,7 +133,9 @@ function SignUpPage() {
                       <input
                         type="password"
                         value={formData.password}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, password: e.target.value })
+                        }
                         className="input"
                         placeholder="Enter your password"
                       />
@@ -117,7 +143,11 @@ function SignUpPage() {
                   </div>
 
                   {/* SUBMIT BUTTON */}
-                  <button className="auth-btn" type="submit" disabled={isSigningUp}>
+                  <button
+                    className="auth-btn"
+                    type="submit"
+                    disabled={isSigningUp}
+                  >
                     {isSigningUp ? (
                       <LoaderIcon className="w-full h-5 animate-spin text-center" />
                     ) : (
@@ -143,7 +173,9 @@ function SignUpPage() {
                   className="w-full h-auto object-contain"
                 />
                 <div className="mt-6 text-center">
-                  <h3 className="text-xl font-medium text-cyan-400">Start Your Journey Today</h3>
+                  <h3 className="text-xl font-medium text-cyan-400">
+                    Start Your Journey Today
+                  </h3>
 
                   <div className="mt-4 flex justify-center gap-4">
                     <span className="auth-badge">Free</span>

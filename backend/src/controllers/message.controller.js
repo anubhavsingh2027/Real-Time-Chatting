@@ -2,6 +2,19 @@ import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
+import {
+  messageCounter,
+  cacheHitRate,
+  cacheMissRate,
+  errorCounter,
+} from "../lib/metrics.js";
+import {
+  setCacheData,
+  getCacheData,
+  invalidatePattern,
+  publishEvent,
+} from "../lib/redis.js";
+import { addMessageToQueue, addDeliveryToQueue } from "../lib/queue.js";
 
 export const getAllContacts = async (req, res) => {
   try {
@@ -176,8 +189,8 @@ export const getChatPartners = async (req, res) => {
         messages.map((msg) =>
           msg.senderId.toString() === loggedInUserId.toString()
             ? msg.receiverId.toString()
-            : msg.senderId.toString()
-        )
+            : msg.senderId.toString(),
+        ),
       ),
     ];
 
@@ -254,7 +267,7 @@ export const addReaction = async (req, res) => {
 
     // Check if user already reacted
     const existingReaction = message.reactions.find(
-      (r) => r.userId.toString() === loggedInUserId.toString()
+      (r) => r.userId.toString() === loggedInUserId.toString(),
     );
 
     if (existingReaction) {
@@ -305,7 +318,7 @@ export const removeReaction = async (req, res) => {
 
     // Remove user's reaction
     message.reactions = message.reactions.filter(
-      (r) => r.userId.toString() !== loggedInUserId.toString()
+      (r) => r.userId.toString() !== loggedInUserId.toString(),
     );
 
     await message.save();

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 import {
   ChevronDown,
   Copy,
@@ -7,14 +7,20 @@ import {
   Trash2,
   X,
   Reply,
-} from 'lucide-react';
-import ConfirmDialog from './ConfirmDialog';
-import toast from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useChatStore } from '../store/useChatStore';
-import { useAuthStore } from '../store/useAuthStore';
+} from "lucide-react";
+import ConfirmDialog from "./ConfirmDialog";
+import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 
-function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete, onReply }) {
+function MessageBubble({
+  message,
+  isOwnMessage,
+  messageStatus = "sent",
+  onDelete,
+  onReply,
+}) {
   const [showActions, setShowActions] = useState(false);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
@@ -30,16 +36,16 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
   const { addReaction, setSelectedMessage, setReplyToMessage } = useChatStore();
   const { authUser } = useAuthStore();
 
-  const reactions = ['❤️', '👍', '😊', '😂', '😮', '😢','😡','🎊'];
+  const reactions = ["❤️", "👍", "😊", "😂", "😮", "😢", "😡", "🎊"];
   const isLongMessage = (message.text?.length || 0) > 150;
 
   // Helper to safely get sender name from replyTo
   const getReplySenderName = () => {
-    if (!message.replyTo?.senderId) return 'Unknown';
-    if (typeof message.replyTo.senderId === 'object') {
-      return message.replyTo.senderId.fullName || 'Unknown';
+    if (!message.replyTo?.senderId) return "Unknown";
+    if (typeof message.replyTo.senderId === "object") {
+      return message.replyTo.senderId.fullName || "Unknown";
     }
-    return 'Unknown';
+    return "Unknown";
   };
 
   // Helper to render text with clickable links
@@ -53,7 +59,7 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
     return parts.map((part, index) => {
       if (urlRegex.test(part)) {
         // It's a link
-        const url = part.startsWith('www.') ? `https://${part}` : part;
+        const url = part.startsWith("www.") ? `https://${part}` : part;
         return (
           <a
             key={index}
@@ -74,15 +80,15 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
 
   useEffect(() => {
     const onEsc = (e) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setShowImageModal(false);
         setShowActions(false);
         setShowReactionPopup(false);
         setShowMenuButton(false);
       }
     };
-    window.addEventListener('keydown', onEsc);
-    return () => window.removeEventListener('keydown', onEsc);
+    window.addEventListener("keydown", onEsc);
+    return () => window.removeEventListener("keydown", onEsc);
   }, []);
 
   useEffect(() => {
@@ -98,11 +104,11 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
       }
     };
 
-    document.addEventListener('mousedown', onDocClick);
-    document.addEventListener('touchstart', onDocClick);
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("touchstart", onDocClick);
     return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      document.removeEventListener('touchstart', onDocClick);
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("touchstart", onDocClick);
     };
   }, [showActions, showReactionPopup]);
 
@@ -116,17 +122,18 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
         setShowMenuButton(false);
       }
     };
-    window.addEventListener('message-dropdown-open', onOtherOpen);
-    return () => window.removeEventListener('message-dropdown-open', onOtherOpen);
+    window.addEventListener("message-dropdown-open", onOtherOpen);
+    return () =>
+      window.removeEventListener("message-dropdown-open", onOtherOpen);
   }, [message._id]);
 
   const handleCopyMessage = async () => {
     try {
-      await navigator.clipboard.writeText(message.text || '');
-      toast.success('Copied to clipboard');
+      await navigator.clipboard.writeText(message.text || "");
+      toast.success("Copied to clipboard");
       setShowActions(false);
     } catch {
-      toast.error('Failed to copy');
+      toast.error("Failed to copy");
     }
   };
 
@@ -134,30 +141,29 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
     try {
       const res = await fetch(url);
       const blob = await res.blob();
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
-      const ext = (blob.type || 'image/jpeg').split('/')[1] || 'jpg';
+      const ext = (blob.type || "image/jpeg").split("/")[1] || "jpg";
       link.download = `image-${Date.now()}.${ext}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      toast.success('Download started');
+      toast.success("Download started");
     } catch {
-      toast.error('Download failed');
+      toast.error("Download failed");
     }
   };
 
   const handleReaction = async (emoji) => {
     try {
       await addReaction(message._id, emoji);
-      toast.success('Emoji Reaction added', {
+      toast.success("Emoji Reaction added", {
         duration: 2000,
       });
       setShowReactionPopup(false);
       setShowMenuButton(false);
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to add reaction');
+      toast.error("Failed to add reaction");
     }
   };
 
@@ -166,7 +172,7 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
     onReply(message);
     setShowActions(false);
     setShowMenuButton(false);
-    toast.success('Ready to reply', { duration: 1500 });
+    toast.success("Ready to reply", { duration: 1500 });
   };
 
   const handleDelete = () => {
@@ -183,18 +189,20 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
 
   const getStatusIcon = () => {
     switch (messageStatus) {
-      case 'sending':
-        return <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />;
-      case 'sent':
+      case "sending":
+        return (
+          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+        );
+      case "sent":
         return <Check className="w-4 h-4 text-white" strokeWidth={2} />;
-      case 'delivered':
+      case "delivered":
         return (
           <div className="flex -space-x-1">
             <Check className="w-4 h-4 text-white/90" strokeWidth={2} />
             <Check className="w-4 h-4 text-white/90" strokeWidth={2} />
           </div>
         );
-      case 'seen':
+      case "seen":
         return (
           <div className="flex -space-x-1">
             <Check className="w-4 h-4 text-sky-400" strokeWidth={2.5} />
@@ -215,7 +223,11 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
     longPressTimer.current = setTimeout(() => {
       setShowReactionPopup(true);
       setShowMenuButton(true);
-      window.dispatchEvent(new CustomEvent('message-dropdown-open', { detail: { id: message._id } }));
+      window.dispatchEvent(
+        new CustomEvent("message-dropdown-open", {
+          detail: { id: message._id },
+        }),
+      );
     }, 600);
   };
 
@@ -228,7 +240,6 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
       if (swipeDistance < 0) {
         // Swiped left
         setReplyToMessage(message);
-        
       }
     }
     setSwipeDistance(0);
@@ -247,11 +258,15 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
     longPressTimer.current = setTimeout(() => {
       setShowReactionPopup(true);
       setShowMenuButton(true);
-      window.dispatchEvent(new CustomEvent('message-dropdown-open', { detail: { id: message._id } }));
+      window.dispatchEvent(
+        new CustomEvent("message-dropdown-open", {
+          detail: { id: message._id },
+        }),
+      );
     }, 600);
   };
 
-  const containerAlign = isOwnMessage ? 'justify-end' : 'justify-start';
+  const containerAlign = isOwnMessage ? "justify-end" : "justify-start";
 
   return (
     <>
@@ -268,19 +283,19 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
           opacity: 1,
           scale: 1,
           y: 0,
-          transition: { duration: 0.25, ease: "easeOut" }
+          transition: { duration: 0.25, ease: "easeOut" },
         }}
         exit={{
           opacity: 0,
           scale: 0.6,
           y: -10,
           filter: "blur(4px)",
-          transition: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }
+          transition: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] },
         }}
         layout
       >
         <motion.div
-          className={`relative max-w-[85%] flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}
+          className={`relative max-w-[85%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}
           layout
         >
           {showReactionPopup && (
@@ -290,12 +305,12 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
               exit={{ opacity: 0, scale: 0.8, y: 10 }}
               transition={{ duration: 0.2 }}
               className={`absolute z-[100] transform origin-bottom ${
-                isOwnMessage ? 'popup-right' : 'popup-left'
+                isOwnMessage ? "popup-right" : "popup-left"
               }`}
               style={{
-                top: 'calc(100% + 6px)',
-                left: isOwnMessage ? 'auto' : '0',
-                right: isOwnMessage ? '0' : 'auto'
+                top: "calc(100% + 6px)",
+                left: isOwnMessage ? "auto" : "0",
+                right: isOwnMessage ? "0" : "auto",
               }}
             >
               <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-1.5 flex items-center gap-0.5 ring-1 ring-black/5 dark:ring-white/10 scale-100 hover:scale-[1.02] transition-transform min-w-max">
@@ -315,10 +330,10 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
 
           <motion.div
             layout
-            className={`message-bubble group relative inline-flex flex-col items-start gap-2 p-2.5 sm:p-3 rounded-2xl shadow-sm ${
+            className={`message-bubble group relative inline-flex flex-col items-start gap-2 p-2.5 sm:p-3 rounded-2xl shadow-md transition-all duration-200 ${
               isOwnMessage
-                ? 'bg-emerald-500 text-white rounded-tr-[4px]'
-                : 'bg-slate-700 text-slate-100 rounded-tl-[4px]'
+                ? "bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600 text-white rounded-tr-[4px] shadow-purple-200 dark:shadow-purple-900/40 hover:shadow-lg"
+                : "bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-blue-900 dark:to-blue-800 text-gray-900 dark:text-blue-100 rounded-tl-[4px] shadow-cyan-200 dark:shadow-blue-900/40 hover:shadow-lg"
             }`}
             style={{
               marginLeft: !isOwnMessage ? `${swipeX}px` : 0,
@@ -334,11 +349,13 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
 
             {/* Reply Preview */}
             {message.replyTo && (
-              <div className={`w-full px-3 py-2 rounded-lg border-l-4 mb-2 ${
-                isOwnMessage
-                  ? 'bg-white/20 border-white/60 text-white'
-                  : 'bg-slate-800/40 border-slate-400/60 text-slate-100'
-              }`}>
+              <div
+                className={`w-full px-3 py-2 rounded-lg border-l-4 mb-2 transition-colors duration-200 ${
+                  isOwnMessage
+                    ? "bg-white/20 border-white/60 text-white dark:bg-black/20"
+                    : "bg-gray-300/40 dark:bg-slate-800/40 border-gray-500/60 dark:border-slate-400/60 text-gray-900 dark:text-slate-100"
+                }`}
+              >
                 <div className="flex items-center gap-1 mb-1">
                   <span className="text-lg">↪️</span>
                   <p className="text-xs font-bold opacity-90">
@@ -346,22 +363,21 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                   </p>
                 </div>
                 <p className="text-xs line-clamp-2 opacity-85 pl-5">
-                  {message.replyTo.text || (message.replyTo.image && '📷 Image message')}
+                  {message.replyTo.text ||
+                    (message.replyTo.image && "📷 Image message")}
                 </p>
               </div>
             )}
 
             {message.image && (
-              <div
-                className="inline-block w-[280px] aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-black/5 dark:bg-white/5"
-              >
+              <div className="inline-block w-[280px] aspect-square rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-black/5 dark:bg-white/5">
                 <div className="w-full h-full flex items-center justify-center">
                   <img
                     ref={imageRef}
                     src={message.image}
-                    alt={message.text ? 'attachment' : 'image'}
+                    alt={message.text ? "attachment" : "image"}
                     onClick={() => setShowImageModal(true)}
-                    onError={(e) => (e.currentTarget.style.display = 'none')}
+                    onError={(e) => (e.currentTarget.style.display = "none")}
                     className="max-w-full max-h-full w-auto h-auto object-contain cursor-zoom-in hover:opacity-95 transition-opacity"
                   />
                 </div>
@@ -372,44 +388,52 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
               <div className="space-y-2 max-w-sm">
                 <div className="text-sm leading-relaxed break-words whitespace-pre-wrap font-normal overflow-hidden">
                   {isLongMessage && !isExpanded
-                    ? renderTextWithLinks(message.text.substring(0, 200) + '...')
+                    ? renderTextWithLinks(
+                        message.text.substring(0, 200) + "...",
+                      )
                     : renderTextWithLinks(message.text)}
                 </div>
                 {isLongMessage && (
                   <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className={`text-xs font-semibold px-3 py-1 rounded-md transition-colors ${
+                    className={`text-xs font-semibold px-3 py-1 rounded-md transition-all duration-200 active:scale-95 ${
                       isOwnMessage
-                        ? 'bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-slate-600/30 hover:bg-slate-600/50 text-slate-700 dark:text-slate-300'
+                        ? "bg-white/25 hover:bg-white/35 text-white"
+                        : "bg-gray-400/30 dark:bg-slate-600/30 hover:bg-gray-500/40 dark:hover:bg-slate-600/50 text-gray-800 dark:text-slate-200"
                     }`}
                   >
-                    {isExpanded ? '▲ Show Less' : '▼ Read More'}
+                    {isExpanded ? "▲ Show Less" : "▼ Read More"}
                   </button>
                 )}
               </div>
             )}
 
             <div className="flex items-center gap-2 self-end mt-0.5">
-              <time className={`text-[11px] opacity-80 ${isOwnMessage ? 'text-white/80' : 'text-slate-300'}`}>
+              <time
+                className={`text-[11px] opacity-80 ${isOwnMessage ? "text-white/80" : "text-slate-300"}`}
+              >
                 {message.createdAt
                   ? new Date(message.createdAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
+                      hour: "2-digit",
+                      minute: "2-digit",
                     })
-                  : ''}
+                  : ""}
               </time>
-              {isOwnMessage && <div className="flex items-center">{getStatusIcon()}</div>}
+              {isOwnMessage && (
+                <div className="flex items-center">{getStatusIcon()}</div>
+              )}
             </div>
           </motion.div>
 
           <motion.div
-            className={`absolute ${!isOwnMessage ? 'right-[-48px]' : 'left-[-48px]'} transition-all duration-200 ${
-              showMenuButton ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-75'
+            className={`absolute ${!isOwnMessage ? "right-[-48px]" : "left-[-48px]"} transition-all duration-200 ${
+              showMenuButton
+                ? "opacity-100 visible scale-100"
+                : "opacity-0 invisible scale-75"
             }`}
             style={{
-              top: '50%',
-              transform: 'translateY(-50%)',
+              top: "50%",
+              transform: "translateY(-50%)",
             }}
             layout
           >
@@ -419,7 +443,9 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
                 setSelectedMessage(message);
               }}
               className={`p-2.5 rounded-full transition-all duration-150 focus:outline-none shadow-lg cursor-pointer ring-1 ${
-                isOwnMessage ? 'bg-emerald-500 hover:bg-emerald-600 ring-emerald-400/30 hover:shadow-emerald-500/30' : 'bg-slate-600 hover:bg-slate-700 ring-slate-500/30 hover:shadow-slate-500/30'
+                isOwnMessage
+                  ? "bg-emerald-500 hover:bg-emerald-600 ring-emerald-400/30 hover:shadow-emerald-500/30"
+                  : "bg-slate-600 hover:bg-slate-700 ring-slate-500/30 hover:shadow-slate-500/30"
               }`}
               aria-label="message actions"
               title="View & interact with message"
@@ -438,7 +464,7 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
               exit={{ opacity: 0, scale: 0.85, y: -15 }}
               transition={{ duration: 0.15 }}
               className={`fixed z-[50] ${
-                isOwnMessage ? 'menu-right' : 'menu-left'
+                isOwnMessage ? "menu-right" : "menu-left"
               }`}
               ref={(el) => {
                 if (el && bubbleRef.current) {
@@ -456,95 +482,97 @@ function MessageBubble({ message, isOwnMessage, messageStatus = 'sent', onDelete
 
                   if (isOwnMessage) {
                     el.style.right = `${window.innerWidth - bubbleRect.right}px`;
-                    el.style.left = 'auto';
+                    el.style.left = "auto";
                   } else {
                     el.style.left = `${bubbleRect.left}px`;
-                    el.style.right = 'auto';
+                    el.style.right = "auto";
                   }
                 }
               }}
             >
               <div className="rounded-2xl shadow-2xl py-1 w-56 backdrop-blur-md bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white ring-1 ring-black/10 dark:ring-white/20 overflow-hidden">
+                <div className="px-1.5">
+                  <button
+                    onClick={handleCopyMessage}
+                    className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-3 transition-colors font-medium"
+                  >
+                    <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Copy</span>
+                  </button>
+                </div>
+
+                <div className="px-1.5">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowReactionPopup(true);
+                      setShowActions(true);
+                      setShowMenuButton(true);
+                    }}
+                    className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-3 transition-colors font-medium"
+                  >
+                    <span className="text-xl">😊</span>
+                    <span>React</span>
+                  </button>
+                </div>
+
+                <div className="px-1.5">
+                  <button
+                    onClick={handleReply}
+                    className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-3 transition-colors font-medium"
+                  >
+                    <Reply className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <span>Reply</span>
+                  </button>
+                </div>
+
+                {message.image && (
                   <div className="px-1.5">
                     <button
-                      onClick={handleCopyMessage}
-                      className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center gap-3 transition-colors font-medium"
+                      onClick={() => handleDownloadImage(message.image)}
+                      className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30 flex items-center gap-3 transition-colors font-medium"
                     >
-                      <Copy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <span>Copy</span>
+                      <Download className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <span>Download</span>
                     </button>
                   </div>
+                )}
 
-                  <div className="px-1.5">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowReactionPopup(true);
-                        setShowActions(true);
-                        setShowMenuButton(true);
-                      }}
-                      className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 flex items-center gap-3 transition-colors font-medium"
-                    >
-                      <span className="text-xl">😊</span>
-                      <span>React</span>
-                    </button>
-                  </div>
-
-                  <div className="px-1.5">
-                    <button
-                      onClick={handleReply}
-                      className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 flex items-center gap-3 transition-colors font-medium"
-                    >
-                      <Reply className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      <span>Reply</span>
-                    </button>
-                  </div>
-
-                  {message.image && (
+                {isOwnMessage && (
+                  <>
+                    <div className="my-1.5 border-t border-gray-200 dark:border-slate-700/50" />
                     <div className="px-1.5">
                       <button
-                        onClick={() => handleDownloadImage(message.image)}
-                        className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/30 flex items-center gap-3 transition-colors font-medium"
+                        onClick={handleDelete}
+                        className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 text-red-600 dark:text-red-400 transition-colors font-medium"
                       >
-                        <Download className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                        <span>Download</span>
+                        <Trash2 className="w-4 h-4" />
+                        <span>Delete</span>
                       </button>
                     </div>
-                  )}
-
-                  {isOwnMessage && (
-                    <>
-                      <div className="my-1.5 border-t border-gray-200 dark:border-slate-700/50" />
-                      <div className="px-1.5">
-                        <button
-                          onClick={handleDelete}
-                          className="w-full text-left px-3 py-2.5 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 text-red-600 dark:text-red-400 transition-colors font-medium"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </motion.div>
-            )}
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {message.reactions && message.reactions.length > 0 && (
-            <motion.div
-              layout
-              className={`absolute -bottom-2 ${isOwnMessage ? 'right-2' : 'left-2'} bg-white dark:bg-slate-800 rounded-full px-2 py-0.5 shadow-md border border-gray-200 dark:border-slate-700 flex items-center gap-1 text-sm z-10`}
-            >
-              {message.reactions.slice(0, 3).map((r, i) => (
-                <span key={i}>{r.emoji || r}</span>
-              ))}
-              {message.reactions.length > 3 && (
-                <span className="text-xs text-gray-500">+{message.reactions.length - 3}</span>
-              )}
-            </motion.div>
-          )}
-        </motion.div>
+          <motion.div
+            layout
+            className={`absolute -bottom-2 ${isOwnMessage ? "right-2" : "left-2"} bg-white dark:bg-slate-800 rounded-full px-2 py-0.5 shadow-md border border-gray-200 dark:border-slate-700 flex items-center gap-1 text-sm z-10`}
+          >
+            {message.reactions.slice(0, 3).map((r, i) => (
+              <span key={i}>{r.emoji || r}</span>
+            ))}
+            {message.reactions.length > 3 && (
+              <span className="text-xs text-gray-500">
+                +{message.reactions.length - 3}
+              </span>
+            )}
+          </motion.div>
+        )}
+      </motion.div>
 
       {showImageModal && message.image && (
         <div

@@ -27,10 +27,10 @@ function ChatContainer({ onBack }) {
 
   // Helper to format date
   const formatDateDivider = (date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(date).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -42,25 +42,23 @@ function ChatContainer({ onBack }) {
     return currentDate !== prevDate;
   };
 
- useEffect(() => {
-  if (!selectedUser?._id) return;
+  useEffect(() => {
+    if (!selectedUser?._id) return;
 
-  getMessagesByUserId(selectedUser._id);
-  clearUnreadCount(selectedUser._id);
+    getMessagesByUserId(selectedUser._id);
+    clearUnreadCount(selectedUser._id);
 
-  // prevent duplicate socket listeners
-  let unsubscribed = false;
-  subscribeToMessages();
+    // prevent duplicate socket listeners
+    let unsubscribed = false;
+    subscribeToMessages();
 
-  return () => {
-    if (!unsubscribed) {
-      unsubscribeFromMessages();
-      unsubscribed = true;
-    }
-  };
-}, [selectedUser?._id]);
-
-
+    return () => {
+      if (!unsubscribed) {
+        unsubscribeFromMessages();
+        unsubscribed = true;
+      }
+    };
+  }, [selectedUser?._id]);
 
   // Scroll to bottom when messages load
   useEffect(() => {
@@ -76,12 +74,12 @@ function ChatContainer({ onBack }) {
     if (!messageEndRef.current || messages.length === 0) return;
 
     const lastMessage = messages[messages.length - 1];
-    const isNewMessage = lastMessage && (
+    const isNewMessage =
+      lastMessage &&
       // Check if it's a fresh message (created in the last second)
-      new Date(lastMessage.createdAt).getTime() > Date.now() - 1000 ||
-      // Or if it's an optimistic message (being sent)
-      lastMessage.isOptimistic
-    );
+      (new Date(lastMessage.createdAt).getTime() > Date.now() - 1000 ||
+        // Or if it's an optimistic message (being sent)
+        lastMessage.isOptimistic);
 
     if (isNewMessage) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -89,11 +87,14 @@ function ChatContainer({ onBack }) {
   }, [messages]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full w-full flex flex-col bg-white dark:bg-slate-800">
       <ChatHeader onBack={onBack} />
-      <div className="flex-1 px-3 sm:px-6 overflow-y-auto py-4 sm:py-4 bg-gray-100 dark:bg-slate-800" style={{ overflow: 'auto', overflowX: 'hidden' }}>
+      <div
+        className="flex-1 px-3 sm:px-6 overflow-y-auto py-4 sm:py-6 bg-gradient-to-b from-blue-50 via-white to-blue-50 dark:from-slate-700 dark:via-slate-800 dark:to-slate-700"
+        style={{ overflow: "auto", overflowX: "hidden" }}
+      >
         {messages.length > 0 && !isMessagesLoading ? (
-          <div className="max-w-3xl mx-auto space-y-3">
+          <div className="w-full space-y-3">
             <AnimatePresence mode="popLayout">
               {messages.map((msg, index) => (
                 <div key={msg._id || msg.tempId}>
@@ -110,11 +111,15 @@ function ChatContainer({ onBack }) {
 
                   <MessageBubble
                     message={msg}
-                    isOwnMessage={(typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId) === authUser._id}
+                    isOwnMessage={
+                      (typeof msg.senderId === "object"
+                        ? msg.senderId._id
+                        : msg.senderId) === authUser._id
+                    }
                     messageStatus={
                       msg.isOptimistic
-                        ? 'sending'
-                        : messageStatuses[msg._id] || 'sent'
+                        ? "sending"
+                        : messageStatuses[msg._id] || "sent"
                     }
                     onDelete={deleteMessage}
                     onReply={setReplyToMessage}

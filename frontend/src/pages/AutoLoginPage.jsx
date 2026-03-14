@@ -65,7 +65,6 @@ function AutoLoginPage() {
           }, 1000);
         }
       } catch (error) {
-        console.error("Auto-login failed:", error);
         setIsLoading(false);
         setLoginProgress("Login failed");
         toast.error("Auto-login failed");
