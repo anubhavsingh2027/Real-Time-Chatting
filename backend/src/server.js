@@ -81,7 +81,7 @@ server.listen(PORT, async () => {
     redisConnected = true;
     setupRedisAdapter(); // Setup Redis adapter after connection
   } catch (error) {
-    console.warn("⚠ Redis not available - running in memory-only mode");
+    console.warn(" Redis not available");
     redisConnected = false;
   }
 });
@@ -94,7 +94,7 @@ process.on("uncaughtException", (error) => {
     error.port === 6379
   ) {
     console.warn(
-      "⚠ Redis adapter connection attempt failed - continuing with in-memory adapter",
+      " Redis adapter connection attempt failed - continuing with in-memory adapter",
     );
     // Don't crash, just continue
   } else {
@@ -105,7 +105,7 @@ process.on("uncaughtException", (error) => {
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  // console.error("Unhandled Rejection at:", promise, "reason:", reason);
   // In production, you might want to notify monitoring service here
   process.exit(1);
 });

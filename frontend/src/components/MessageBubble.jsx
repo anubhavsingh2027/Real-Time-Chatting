@@ -440,7 +440,16 @@ function MessageBubble({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedMessage(message);
+                const next = !showActions;
+                setShowActions(next);
+                setShowReactionPopup(false);
+                if (next) {
+                  window.dispatchEvent(
+                    new CustomEvent("message-dropdown-open", {
+                      detail: { id: message._id },
+                    }),
+                  );
+                }
               }}
               className={`p-2.5 rounded-full transition-all duration-150 focus:outline-none shadow-lg cursor-pointer ring-1 ${
                 isOwnMessage
