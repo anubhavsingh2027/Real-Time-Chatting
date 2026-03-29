@@ -12,6 +12,8 @@ It enables **instant, secure, and interactive communication** between users with
 🖼️ **Preview:**
 ![App Preview](https://real-time-chatting.nav-code.com/websiteImg.png)
 
+> 🔍 **Recruiters:** [Click here for instant demo access](#-recruiter-demo-access) — No signup required!
+
 ---
 
 ## 💡 Overview
@@ -42,6 +44,7 @@ Built with scalability and performance in mind, it demonstrates the best practic
 | ⏱️ **Enhanced Loading**        | Beautiful 3-ring loading animation during auth                |
 | 🎉 **Welcome Splash**          | Elegant 4-second welcome screen on app start                  |
 | 📌 **Message Selection**       | Click arrow to select message and access all actions          |
+| 🔍 **Recruiter Demo Access**   | One-click demo login — Explore features instantly             |
 
 ---
 

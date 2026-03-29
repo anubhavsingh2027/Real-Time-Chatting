@@ -49,7 +49,7 @@ export function createWelcomeEmailTemplate(name, clientURL) {
   `;
 }
 
-export function newCustomer(userName,email,ipAdress) {
+export function newCustomer(userName, email, ipAdress) {
   return `
   <!DOCTYPE html>
   <html lang="en">
@@ -92,6 +92,84 @@ export function newCustomer(userName,email,ipAdress) {
         <a href="#" style="color: #FD3A69; text-decoration: none; margin: 0 10px;">Privacy Policy</a>
         <a href="#" style="color: #FD3A69; text-decoration: none; margin: 0 10px;">Terms of Service</a>
         <a href="#" style="color: #FD3A69; text-decoration: none; margin: 0 10px;">Contact Us</a>
+      </p>
+    </div>
+  </body>
+  </html>
+  `;
+}
+
+export function recruiterVisitNotification(recruiterName, timestamp) {
+  const visitDate = new Date(timestamp).toLocaleString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    timeZoneName: "short",
+  });
+
+  return `
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recruiter Visit Alert</title>
+  </head>
+  <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f5f5f5;">
+
+    <div style="background: linear-gradient(to right, #667eea, #764ba2); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+      <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 500;">🔍 Recruiter Demo Access Alert</h1>
+    </div>
+
+    <div style="background-color: #ffffff; padding: 35px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+      <p style="font-size: 18px; color: #667eea;"><strong>Hello,</strong></p>
+      <p>Great news! A recruiter has accessed your Real-Time Chat application in demo mode. Here are the visit details:</p>
+
+      <div style="background: linear-gradient(135deg, #667eea15, #764ba215); padding: 25px; border-radius: 10px; margin: 25px 0; border-left: 4px solid #667eea;">
+        <p style="font-size: 14px; color: #555; margin: 0 0 15px 0;"><strong>📋 Recruiter Demo Information:</strong></p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid #ddd;">
+            <td style="padding: 10px; font-weight: 600; color: #667eea;">Profile Name:</td>
+            <td style="padding: 10px; color: #333;">${recruiterName}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #ddd;">
+            <td style="padding: 10px; font-weight: 600; color: #667eea;">Visit Time:</td>
+            <td style="padding: 10px; color: #333;">${visitDate}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px; font-weight: 600; color: #667eea;">Access Type:</td>
+            <td style="padding: 10px; color: #333;">Guest Demo (Temporary)</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="background-color: #f0f4ff; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+        <p style="font-size: 14px; color: #667eea; margin: 0;"><strong>💡 Note:</strong></p>
+        <p style="font-size: 13px; color: #555; margin: 5px 0 0 0;">This recruiter has access to the demo environment. They can explore all features for a limited time. Consider reaching out to discuss potential opportunities or features they might be interested in!</p>
+      </div>
+
+      <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+        <p style="font-size: 14px; color: #856404; margin: 0;"><strong>📌 Recommended Actions:</strong></p>
+        <ul style="padding-left: 20px; margin: 5px 0 0 0; font-size: 13px; color: #856404;">
+          <li style="margin-bottom: 8px;">Monitor their activity in the platform</li>
+          <li style="margin-bottom: 8px;">Note any feedback they might provide</li>
+          <li style="margin-bottom: 8px;">Consider reaching out via email for follow-up</li>
+          <li style="margin-bottom: 0;">Track their engagement metrics</li>
+        </ul>
+      </div>
+
+      <p style="margin-top: 25px; margin-bottom: 0;">Best regards,<br><strong>Real-Time Chat - Recruiter Tracking System</strong></p>
+    </div>
+
+    <div style="text-align: center; padding: 20px; color: #999; font-size: 12px;">
+      <p>© 2025 Real-Time Chat Application. All rights reserved.</p>
+      <p>
+        <a href="#" style="color: #667eea; text-decoration: none; margin: 0 10px;">Privacy Policy</a>
+        <a href="#" style="color: #667eea; text-decoration: none; margin: 0 10px;">Terms of Service</a>
+        <a href="#" style="color: #667eea; text-decoration: none; margin: 0 10px;">Contact Us</a>
       </p>
     </div>
   </body>

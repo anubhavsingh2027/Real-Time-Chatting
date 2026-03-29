@@ -22,8 +22,10 @@ function ChatContainer({ onBack }) {
     setForwardMessage,
     clearUnreadCount,
   } = useChatStore();
-  const { authUser } = useAuthStore();
+  const { authUser, socket } = useAuthStore();
   const messageEndRef = useRef(null);
+  const markedAsReadRef = useRef(new Set()); // Track which messages we've marked as read
+  const markedAsDeliveredRef = useRef(new Set()); // Track which messages we've marked as delivered
 
   // Helper to format date
   const formatDateDivider = (date) => {
@@ -41,6 +43,52 @@ function ChatContainer({ onBack }) {
     const prevDate = new Date(prevMsg.createdAt).toDateString();
     return currentDate !== prevDate;
   };
+
+  // Auto-mark received messages as delivered and read
+  useEffect(() => {
+    if (!socket || !socket.connected || !selectedUser?._id || !messages.length)
+      return;
+
+    const timerId = setTimeout(() => {
+      messages.forEach((msg) => {
+        // Only mark messages from the other user
+        const senderId =
+          typeof msg.senderId === "object" ? msg.senderId._id : msg.senderId;
+        if (senderId === authUser._id) return;
+
+        // Mark as delivered if not already
+        if (
+          !markedAsDeliveredRef.current.has(msg._id) &&
+          msg.status === "sent"
+        ) {
+          console.log(`Emitting messageDelivered for ${msg._id}`);
+          socket.emit("messageDelivered", {
+            messageId: msg._id,
+            senderId: msg.senderId?._id || msg.senderId,
+          });
+          markedAsDeliveredRef.current.add(msg._id);
+        }
+
+        // Mark as read since we're viewing the chat
+        if (!markedAsReadRef.current.has(msg._id) && msg.status !== "read") {
+          console.log(`Emitting messageRead for ${msg._id}`);
+          socket.emit("messageRead", {
+            messageId: msg._id,
+            senderId: msg.senderId?._id || msg.senderId,
+          });
+          markedAsReadRef.current.add(msg._id);
+        }
+      });
+    }, 500); // Small delay to ensure socket is ready
+
+    return () => clearTimeout(timerId);
+  }, [socket, messages, selectedUser?._id, authUser._id]);
+
+  // Clear tracking sets when switching chats
+  useEffect(() => {
+    markedAsReadRef.current.clear();
+    markedAsDeliveredRef.current.clear();
+  }, [selectedUser?._id]);
 
   useEffect(() => {
     if (!selectedUser?._id) return;

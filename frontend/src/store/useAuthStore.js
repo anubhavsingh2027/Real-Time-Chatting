@@ -60,6 +60,24 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Recruiter Guest Access - temporary demo login
+  recruiterGuest: async () => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/auth/recruiter");
+      set({ authUser: res.data });
+
+      toast.success("Guest access granted! Welcome.");
+      get().connectSocket();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to access as recruiter",
+      );
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");

@@ -18,6 +18,7 @@ import {
   socketConnections,
   messageDeliveryHistogram,
 } from "./metrics.js";
+import Message from "../models/Message.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -118,49 +119,107 @@ io.on("connection", async (socket) => {
   socket.on("messageDelivered", async (data) => {
     try {
       const startTime = Date.now();
-      await addDeliveryToQueue({
-        messageId: data.messageId,
-        receiverId: userId,
-      });
+      const { messageId, senderId } = data;
+
+      console.log(
+        `📨 Marking message ${messageId} as delivered by user ${userId}`,
+      );
+
+      // Update message in database
+      const message = await Message.findByIdAndUpdate(
+        messageId,
+        {
+          $set: {
+            status: "delivered",
+            deliveredAt: new Date(),
+          },
+        },
+        { new: true },
+      );
+
+      if (!message) {
+        console.error("❌ Message not found for delivery update:", messageId);
+        return;
+      }
+
+      console.log(`✅ Message ${messageId} updated to delivered status in DB`);
 
       const duration = (Date.now() - startTime) / 1000;
       messageDeliveryHistogram.observe(duration);
 
       // Notify sender
-      const senderSocketId = userSocketMap[data.senderId];
+      const senderSocketId = userSocketMap[senderId];
       if (senderSocketId) {
+        console.log(`📤 Sending delivery confirmation to sender ${senderId}`);
         io.to(senderSocketId).emit("messageDelivered", {
-          messageId: data.messageId,
+          messageId: message._id,
+          status: "delivered",
+          deliveredAt: message.deliveredAt,
         });
+      } else {
+        console.log(`⚠️  Sender ${senderId} is not online`);
       }
+
+      // Publish for pub/sub subscribers
+      await publishEvent("message:delivered", {
+        messageId: message._id,
+        deliveredAt: message.deliveredAt,
+      });
 
       messageCounter.labels("delivered").inc();
     } catch (error) {
-      console.error("Message delivered error:", error);
+      console.error("❌ Message delivered error:", error);
     }
   });
 
   // Mark as read
   socket.on("messageRead", async (data) => {
     try {
-      await publishEvent("message:read", {
-        messageId: data.messageId,
-        readBy: userId,
-        readAt: new Date(),
-      });
+      const { messageId, senderId } = data;
+
+      console.log(`👁️  Marking message ${messageId} as read by user ${userId}`);
+
+      // Update message in database
+      const message = await Message.findByIdAndUpdate(
+        messageId,
+        {
+          $set: {
+            status: "read",
+            readAt: new Date(),
+          },
+        },
+        { new: true },
+      );
+
+      if (!message) {
+        console.error("❌ Message not found for read update:", messageId);
+        return;
+      }
+
+      console.log(`✅ Message ${messageId} updated to read status in DB`);
 
       // Notify sender
-      const senderSocketId = userSocketMap[data.senderId];
+      const senderSocketId = userSocketMap[senderId];
       if (senderSocketId) {
+        console.log(`📤 Sending read confirmation to sender ${senderId}`);
         io.to(senderSocketId).emit("messageRead", {
-          messageId: data.messageId,
-          readAt: new Date(),
+          messageId: message._id,
+          status: "read",
+          readAt: message.readAt,
         });
+      } else {
+        console.log(`⚠️  Sender ${senderId} is not online`);
       }
+
+      // Publish for pub/sub subscribers
+      await publishEvent("message:read", {
+        messageId: message._id,
+        readAt: message.readAt,
+      });
 
       messageCounter.labels("read").inc();
     } catch (error) {
-      console.error("Message read error:", error);
+      console.error("❌ Message read error:", error);
     }
   });
 

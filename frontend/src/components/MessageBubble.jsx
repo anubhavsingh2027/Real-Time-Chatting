@@ -13,6 +13,8 @@ import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
+import MessageStatusIcon from "./MessageStatusIcon";
+import { MessageStatusTick } from "./MessageStatusTick";
 
 function MessageBubble({
   message,
@@ -185,33 +187,6 @@ function MessageBubble({
     setShowMenuButton(false);
     onDelete(message._id);
     setShowDeleteConfirm(false);
-  };
-
-  const getStatusIcon = () => {
-    switch (messageStatus) {
-      case "sending":
-        return (
-          <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-        );
-      case "sent":
-        return <Check className="w-4 h-4 text-white" strokeWidth={2} />;
-      case "delivered":
-        return (
-          <div className="flex -space-x-1">
-            <Check className="w-4 h-4 text-white/90" strokeWidth={2} />
-            <Check className="w-4 h-4 text-white/90" strokeWidth={2} />
-          </div>
-        );
-      case "seen":
-        return (
-          <div className="flex -space-x-1">
-            <Check className="w-4 h-4 text-sky-400" strokeWidth={2.5} />
-            <Check className="w-4 h-4 text-sky-400" strokeWidth={2.5} />
-          </div>
-        );
-      default:
-        return null;
-    }
   };
 
   const handleMouseEnter = () => setShowMenuButton(true);
@@ -420,7 +395,7 @@ function MessageBubble({
                   : ""}
               </time>
               {isOwnMessage && (
-                <div className="flex items-center">{getStatusIcon()}</div>
+                <MessageStatusTick status={message.status || "sent"} />
               )}
             </div>
           </motion.div>

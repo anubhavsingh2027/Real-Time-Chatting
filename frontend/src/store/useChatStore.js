@@ -171,7 +171,7 @@ export const useChatStore = create(
 
           const res = await axiosInstance.post(
             `/messages/send/${selectedUser._id}`,
-            payload
+            payload,
           );
           const actualMessage = res.data;
 
@@ -185,9 +185,9 @@ export const useChatStore = create(
             messages: uniqueById(
               state.messages
                 .filter(
-                  (m) => m._id !== tempId && m.tempId !== actualMessage._id
+                  (m) => m._id !== tempId && m.tempId !== actualMessage._id,
                 )
-                .concat(normalizeMessage(actualMessage))
+                .concat(normalizeMessage(actualMessage)),
             ),
             // Set message status to 'sent'
             messageStatuses: {
@@ -250,7 +250,8 @@ export const useChatStore = create(
                     ...msg,
                     reactions: [
                       ...(msg.reactions || []).filter(
-                        (r) => r.userId !== useAuthStore.getState().authUser._id
+                        (r) =>
+                          r.userId !== useAuthStore.getState().authUser._id,
                       ),
                       {
                         userId: useAuthStore.getState().authUser._id,
@@ -259,7 +260,7 @@ export const useChatStore = create(
                       },
                     ],
                   }
-                : msg
+                : msg,
             ),
           }));
         } catch (error) {
@@ -280,10 +281,10 @@ export const useChatStore = create(
                 ? {
                     ...msg,
                     reactions: (msg.reactions || []).filter(
-                      (r) => r.userId !== useAuthStore.getState().authUser._id
+                      (r) => r.userId !== useAuthStore.getState().authUser._id,
                     ),
                   }
-                : msg
+                : msg,
             ),
           }));
         } catch (error) {
@@ -392,7 +393,7 @@ export const useChatStore = create(
                 });
               });
             }
-          }
+          },
         );
       },
 
@@ -410,6 +411,8 @@ export const useChatStore = create(
         socket.off("messageDeleted");
         socket.off("messageReaction");
         socket.off("messageReactionRemoved");
+        socket.off("messageDelivered");
+        socket.off("messageRead");
 
         // NEW MESSAGE LISTENER
         const handleNewMessage = (data) => {
@@ -431,7 +434,7 @@ export const useChatStore = create(
               (m) =>
                 m._id === newMessage._id ||
                 m.tempId === newMessage._id ||
-                m._id === newMessage.tempId
+                m._id === newMessage.tempId,
             );
 
             if (isDuplicate) return state;
@@ -447,9 +450,41 @@ export const useChatStore = create(
 
         socket.on("newMessage", handleNewMessage);
 
-        // Others remain the same:
+        // Message status listeners
         socket.on("messageStatus", ({ messageId, status }) => {
           get().updateMessageStatus(messageId, status);
+        });
+
+        // Message delivered listener
+        socket.on("messageDelivered", ({ messageId, status, deliveredAt }) => {
+          get().updateMessageStatus(messageId, "delivered");
+          set((state) => ({
+            messages: state.messages.map((msg) =>
+              msg._id === messageId
+                ? {
+                    ...msg,
+                    status: "delivered",
+                    deliveredAt,
+                  }
+                : msg,
+            ),
+          }));
+        });
+
+        // Message read listener
+        socket.on("messageRead", ({ messageId, status, readAt }) => {
+          get().updateMessageStatus(messageId, "read");
+          set((state) => ({
+            messages: state.messages.map((msg) =>
+              msg._id === messageId
+                ? {
+                    ...msg,
+                    status: "read",
+                    readAt,
+                  }
+                : msg,
+            ),
+          }));
         });
 
         socket.on("messageDeleted", (messageId) => {
@@ -466,12 +501,12 @@ export const useChatStore = create(
                     ...msg,
                     reactions: [
                       ...(msg.reactions || []).filter(
-                        (r) => r.userId !== userId
+                        (r) => r.userId !== userId,
                       ),
                       { userId, emoji, createdAt: new Date().toISOString() },
                     ],
                   }
-                : msg
+                : msg,
             ),
           }));
         });
@@ -483,10 +518,10 @@ export const useChatStore = create(
                 ? {
                     ...msg,
                     reactions: (msg.reactions || []).filter(
-                      (r) => r.userId !== userId
+                      (r) => r.userId !== userId,
                     ),
                   }
-                : msg
+                : msg,
             ),
           }));
         });
@@ -501,6 +536,8 @@ export const useChatStore = create(
         socket.off("messageDeleted");
         socket.off("messageReaction");
         socket.off("messageReactionRemoved");
+        socket.off("messageDelivered");
+        socket.off("messageRead");
       },
     }),
     {
@@ -511,8 +548,8 @@ export const useChatStore = create(
         ...persistedState,
         messages: currentState.messages, // Always use current messages
       }),
-    }
-  )
+    },
+  ),
 );
 
 useSettingsStore.subscribe((state) => {

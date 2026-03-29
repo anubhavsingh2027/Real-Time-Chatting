@@ -19,9 +19,10 @@ import { addMessageToQueue, addDeliveryToQueue } from "../lib/queue.js";
 export const getAllContacts = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
+    // Return only necessary fields: _id, fullName, username, profilePic, email, createdAt
     const filteredUsers = await User.find({
       _id: { $ne: loggedInUserId },
-    }).select("-password");
+    }).select("_id fullName username profilePic email createdAt");
 
     res.status(200).json(filteredUsers);
   } catch (error) {
@@ -40,18 +41,9 @@ export const getMessagesByUserId = async (req, res) => {
         { senderId: userToChatId, receiverId: myId },
       ],
     })
-      .populate("senderId", "fullName username profilePic")
-      .populate("receiverId", "fullName username profilePic")
+      .select("_id text image createdAt status reactions replyTo senderId")
       .populate({
         path: "replyTo",
-        select: "text image senderId",
-        populate: {
-          path: "senderId",
-          select: "fullName username profilePic",
-        },
-      })
-      .populate({
-        path: "forwardedFrom",
         select: "text image senderId",
         populate: {
           path: "senderId",
@@ -67,7 +59,7 @@ export const getMessagesByUserId = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, replyTo, forwardedFrom } = req.body;
+    const { text, image, replyTo } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -97,12 +89,11 @@ export const sendMessage = async (req, res) => {
       text,
       image: imageUrl,
       replyTo: replyTo || null,
-      forwardedFrom: forwardedFrom || null,
     });
 
     await newMessage.save();
 
-    // Populate replyTo and forwardedFrom with full sender details
+    // Populate replyTo with full sender details
     await newMessage.populate([
       {
         path: "replyTo",
@@ -112,19 +103,10 @@ export const sendMessage = async (req, res) => {
           select: "fullName username profilePic",
         },
       },
-      {
-        path: "forwardedFrom",
-        select: "text image senderId",
-        populate: {
-          path: "senderId",
-          select: "fullName username profilePic",
-        },
-      },
     ]);
 
-    // Also populate sender info for the frontend
+    // Populate sender info for the frontend
     await newMessage.populate("senderId", "fullName username profilePic");
-    await newMessage.populate("receiverId", "fullName username profilePic");
 
     const receiverSocketId = getReceiverSocketId(receiverId);
     const senderSocketId = getReceiverSocketId(senderId);
@@ -168,7 +150,19 @@ export const sendMessage = async (req, res) => {
       io.to(senderSocketId).emit("newMessage", newMessage);
     }
 
-    res.status(201).json(newMessage);
+    // Return only necessary fields: _id, text, image, createdAt, status, reactions, replyTo, senderId
+    const responseMessage = {
+      _id: newMessage._id,
+      text: newMessage.text,
+      image: newMessage.image,
+      createdAt: newMessage.createdAt,
+      status: newMessage.status,
+      reactions: newMessage.reactions,
+      replyTo: newMessage.replyTo,
+      senderId: newMessage.senderId,
+    };
+
+    res.status(201).json(responseMessage);
   } catch (error) {
     console.error("Error in sendMessage:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -194,9 +188,10 @@ export const getChatPartners = async (req, res) => {
       ),
     ];
 
+    // Return only necessary fields: _id, fullName, username, profilePic
     const chatPartners = await User.find({
       _id: { $in: chatPartnerIds },
-    }).select("-password");
+    }).select("_id fullName username profilePic");
 
     res.status(200).json(chatPartners);
   } catch (error) {
@@ -298,7 +293,11 @@ export const addReaction = async (req, res) => {
       io.to(receiverSocketId).emit("messageReaction", reactionData);
     }
 
-    res.status(200).json(message);
+    // Return only necessary fields
+    res.status(200).json({
+      _id: message._id,
+      reactions: message.reactions,
+    });
   } catch (error) {
     console.error("Error in addReaction:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -336,9 +335,105 @@ export const removeReaction = async (req, res) => {
       io.to(receiverSocketId).emit("messageReactionRemoved", reactionData);
     }
 
-    res.status(200).json(message);
+    // Return only necessary fields
+    res.status(200).json({
+      _id: message._id,
+      reactions: message.reactions,
+    });
   } catch (error) {
     console.error("Error in removeReaction:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Mark message as delivered
+export const markMessageAsDelivered = async (req, res) => {
+  try {
+    const { id: messageId } = req.params;
+    const loggedInUserId = req.user._id;
+
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Only receiver can mark as delivered
+    if (message.receiverId.toString() !== loggedInUserId.toString()) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    // Update status only if not already delivered or read
+    if (message.status === "sent") {
+      message.status = "delivered";
+      message.deliveredAt = new Date();
+      await message.save();
+    }
+
+    // Notify sender
+    const senderSocketId = getReceiverSocketId(message.senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageDelivered", {
+        messageId: message._id,
+        deliveredAt: message.deliveredAt,
+        status: "delivered",
+      });
+    }
+
+    messageCounter.labels("delivered").inc();
+    res.status(200).json({
+      _id: message._id,
+      status: message.status,
+      deliveredAt: message.deliveredAt,
+    });
+  } catch (error) {
+    console.error("Error in markMessageAsDelivered:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Mark message as read
+export const markMessageAsRead = async (req, res) => {
+  try {
+    const { id: messageId } = req.params;
+    const loggedInUserId = req.user._id;
+
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Only receiver can mark as read
+    if (message.receiverId.toString() !== loggedInUserId.toString()) {
+      return res.status(403).json({ error: "Unauthorized" });
+    }
+
+    // Update status only if not already read
+    if (message.status !== "read") {
+      message.status = "read";
+      message.readAt = new Date();
+      await message.save();
+    }
+
+    // Notify sender
+    const senderSocketId = getReceiverSocketId(message.senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageRead", {
+        messageId: message._id,
+        readAt: message.readAt,
+        status: "read",
+      });
+    }
+
+    messageCounter.labels("read").inc();
+    res.status(200).json({
+      _id: message._id,
+      status: message.status,
+      readAt: message.readAt,
+    });
+  } catch (error) {
+    console.error("Error in markMessageAsRead:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -27,8 +27,18 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    // New fields for recruiter guest access and user roles
+    role: {
+      type: String,
+      enum: ["user", "recruiter"],
+      default: "user",
+    },
+    isGuest: {
+      type: Boolean,
+      default: false,
+    },
   },
-  { timestamps: true } // createdAt & updatedAt
+  { timestamps: true }, // createdAt & updatedAt
 );
 
 const User = mongoose.model("User", userSchema);
