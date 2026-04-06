@@ -273,3 +273,4 @@ It merges **powerful real-time performance** with a **beautiful, user-friendly R
 > “Code fast. Chat faster.” — _Anubhav Singh_
 
 ⭐ **Star this project** on GitHub if you like it!
+![ThankYou For Visiting My GitHub Profile](https://app.chatting.nav-code.com/detector/newUser/chatapp-github)
