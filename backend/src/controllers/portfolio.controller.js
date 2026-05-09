@@ -1,24 +1,41 @@
-import { UAParser } from "ua-parser-js";
-
-/**
- * Parse User-Agent using ua-parser-js (industry-standard library)
- * Handles 1000+ browser/OS/device combinations reliably
- * @param {string} userAgent - Raw User-Agent header
- * @returns {{browser: string, os: string, deviceType: string}}
- */
+// Parse User-Agent to extract browser, OS, and device type
 const parseUserAgent = (userAgent) => {
-  if (!userAgent) {
+  if (!userAgent)
     return { browser: "Unknown", os: "Unknown", deviceType: "Unknown" };
+
+  const ua = userAgent;
+
+  // Detect Browser
+  let browser = "Unknown";
+  if (/(Edge|Edg|EdgA|EdgiOS)/i.test(ua)) browser = "Edge";
+  else if (/Chrome/i.test(ua) && !/Chromium/i.test(ua)) browser = "Chrome";
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/CriOS/i.test(ua))
+    browser = "Safari";
+  else if (/Firefox/i.test(ua)) browser = "Firefox";
+  else if (/(Opera|OPR)/i.test(ua)) browser = "Opera";
+  else if (/Trident/i.test(ua) || /MSIE/i.test(ua))
+    browser = "Internet Explorer";
+  else if (/UCBrowser/i.test(ua)) browser = "UC Browser";
+  else if (/SamsungBrowser/i.test(ua)) browser = "Samsung Browser";
+
+  // Detect OS
+  let os = "Unknown";
+  if (/Windows/i.test(ua)) os = "Windows";
+  else if (/Macintosh|MacPPC|MacIntel|Mac_/i.test(ua)) os = "macOS";
+  else if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = "Linux";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+  else if (/CrOS/i.test(ua)) os = "Chrome OS";
+
+  // Detect Device Type
+  let deviceType = "Desktop";
+  if (
+    /Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone|webOS/i.test(ua)
+  ) {
+    deviceType = /iPad|Android(?!.*Mobile)/i.test(ua) ? "Tablet" : "Mobile";
   }
 
-  const parser = new UAParser(userAgent);
-  const result = parser.getResult();
-
-  return {
-    browser: result.browser.name || "Unknown",
-    os: result.os.name || "Unknown",
-    deviceType: result.device.type || "Desktop", // Returns: "console", "mobile", "tablet", "smarttv", "wearable", or undefined (defaults to "Desktop")
-  };
+  return { browser, os, deviceType };
 };
 
 export const portfolioNewUser = async (req, res) => {
@@ -38,17 +55,7 @@ export const portfolioNewUser = async (req, res) => {
     }
 
     // Parse User-Agent to get browser, OS, and device type
-    // req.headers["user-agent"] is automatically provided by Express
-    // It's set by the browser/client making the request
-    const userAgent = req.headers["user-agent"];
-    
-    if (!userAgent) {
-      console.warn(
-        "[Portfolio Alert] Warning: user-agent header missing or empty. Request headers:",
-        Object.keys(req.headers)
-      );
-    }
-
+    const userAgent = req.headers["user-agent"] || "Unknown";
     const { browser, os, deviceType } = parseUserAgent(userAgent);
 
     // Fetch IP details
