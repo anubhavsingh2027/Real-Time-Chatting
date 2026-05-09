@@ -1,28 +1,33 @@
 // Parse User-Agent to extract browser, OS, and device type
 const parseUserAgent = (userAgent) => {
-  const ua = userAgent.toLowerCase();
+  if (!userAgent) return { browser: "Unknown", os: "Unknown", deviceType: "Unknown" };
+  
+  const ua = userAgent;
   
   // Detect Browser
   let browser = "Unknown";
-  if (ua.includes("edg/")) browser = "Edge";
-  else if (ua.includes("chrome") && !ua.includes("edg")) browser = "Chrome";
-  else if (ua.includes("safari") && !ua.includes("chrome")) browser = "Safari";
-  else if (ua.includes("firefox")) browser = "Firefox";
-  else if (ua.includes("opera") || ua.includes("opr/")) browser = "Opera";
-  else if (ua.includes("trident") || ua.includes("msie")) browser = "Internet Explorer";
+  if (/(Edge|Edg|EdgA|EdgiOS)/i.test(ua)) browser = "Edge";
+  else if (/Chrome/i.test(ua) && !/Chromium/i.test(ua)) browser = "Chrome";
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/CriOS/i.test(ua)) browser = "Safari";
+  else if (/Firefox/i.test(ua)) browser = "Firefox";
+  else if (/(Opera|OPR)/i.test(ua)) browser = "Opera";
+  else if (/Trident/i.test(ua) || /MSIE/i.test(ua)) browser = "Internet Explorer";
+  else if (/UCBrowser/i.test(ua)) browser = "UC Browser";
+  else if (/SamsungBrowser/i.test(ua)) browser = "Samsung Browser";
   
   // Detect OS
   let os = "Unknown";
-  if (ua.includes("win")) os = "Windows";
-  else if (ua.includes("mac")) os = "macOS";
-  else if (ua.includes("linux")) os = "Linux";
-  else if (ua.includes("android")) os = "Android";
-  else if (ua.includes("iphone") || ua.includes("ipad")) os = "iOS";
+  if (/Windows/i.test(ua)) os = "Windows";
+  else if (/Macintosh|MacPPC|MacIntel|Mac_/i.test(ua)) os = "macOS";
+  else if (/Linux/i.test(ua) && !/Android/i.test(ua)) os = "Linux";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+  else if (/CrOS/i.test(ua)) os = "Chrome OS";
   
   // Detect Device Type
   let deviceType = "Desktop";
-  if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone") || ua.includes("ipad") || ua.includes("webos") || ua.includes("blackberry") || ua.includes("windows phone")) {
-    deviceType = ua.includes("ipad") || ua.includes("tablet") ? "Tablet" : "Mobile";
+  if (/Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone|webOS/i.test(ua)) {
+    deviceType = /iPad|Android(?!.*Mobile)/i.test(ua) ? "Tablet" : "Mobile";
   }
   
   return { browser, os, deviceType };
