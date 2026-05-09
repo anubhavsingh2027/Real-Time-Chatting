@@ -1,3 +1,33 @@
+// Parse User-Agent to extract browser, OS, and device type
+const parseUserAgent = (userAgent) => {
+  const ua = userAgent.toLowerCase();
+  
+  // Detect Browser
+  let browser = "Unknown";
+  if (ua.includes("edg/")) browser = "Edge";
+  else if (ua.includes("chrome") && !ua.includes("edg")) browser = "Chrome";
+  else if (ua.includes("safari") && !ua.includes("chrome")) browser = "Safari";
+  else if (ua.includes("firefox")) browser = "Firefox";
+  else if (ua.includes("opera") || ua.includes("opr/")) browser = "Opera";
+  else if (ua.includes("trident") || ua.includes("msie")) browser = "Internet Explorer";
+  
+  // Detect OS
+  let os = "Unknown";
+  if (ua.includes("win")) os = "Windows";
+  else if (ua.includes("mac")) os = "macOS";
+  else if (ua.includes("linux")) os = "Linux";
+  else if (ua.includes("android")) os = "Android";
+  else if (ua.includes("iphone") || ua.includes("ipad")) os = "iOS";
+  
+  // Detect Device Type
+  let deviceType = "Desktop";
+  if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone") || ua.includes("ipad") || ua.includes("webos") || ua.includes("blackberry") || ua.includes("windows phone")) {
+    deviceType = ua.includes("ipad") || ua.includes("tablet") ? "Tablet" : "Mobile";
+  }
+  
+  return { browser, os, deviceType };
+};
+
 export const portfolioNewUser = async (req, res) => {
   const websiteName = req.params.websiteName;
   try {
@@ -13,6 +43,10 @@ export const portfolioNewUser = async (req, res) => {
         message: "User IP not found",
       });
     }
+
+    // Parse User-Agent to get browser, OS, and device type
+    const userAgent = req.headers["user-agent"] || "Unknown";
+    const { browser, os, deviceType } = parseUserAgent(userAgent);
 
     // Fetch IP details
     const ipDetailResponse = await fetch(`https://ipinfo.io/${ip}/json`);
@@ -31,6 +65,9 @@ export const portfolioNewUser = async (req, res) => {
 
       <h3>Visitor Details:</h3>
       <p><b>IP Address:</b> ${ip}</p>
+      <p><b>Browser:</b> ${browser}</p>
+      <p><b>Operating System:</b> ${os}</p>
+      <p><b>Device Type:</b> ${deviceType}</p>
       <p><b>City:</b> ${ipDet.city || "N/A"}</p>
       <p><b>Region:</b> ${ipDet.region || "N/A"}</p>
       <p><b>Country:</b> ${ipDet.country || "N/A"}</p>
