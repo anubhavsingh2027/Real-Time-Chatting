@@ -1,20 +1,23 @@
 // Parse User-Agent to extract browser, OS, and device type
 const parseUserAgent = (userAgent) => {
-  if (!userAgent) return { browser: "Unknown", os: "Unknown", deviceType: "Unknown" };
-  
+  if (!userAgent)
+    return { browser: "Unknown", os: "Unknown", deviceType: "Unknown" };
+
   const ua = userAgent;
-  
+
   // Detect Browser
   let browser = "Unknown";
   if (/(Edge|Edg|EdgA|EdgiOS)/i.test(ua)) browser = "Edge";
   else if (/Chrome/i.test(ua) && !/Chromium/i.test(ua)) browser = "Chrome";
-  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/CriOS/i.test(ua)) browser = "Safari";
+  else if (/Safari/i.test(ua) && !/Chrome/i.test(ua) && !/CriOS/i.test(ua))
+    browser = "Safari";
   else if (/Firefox/i.test(ua)) browser = "Firefox";
   else if (/(Opera|OPR)/i.test(ua)) browser = "Opera";
-  else if (/Trident/i.test(ua) || /MSIE/i.test(ua)) browser = "Internet Explorer";
+  else if (/Trident/i.test(ua) || /MSIE/i.test(ua))
+    browser = "Internet Explorer";
   else if (/UCBrowser/i.test(ua)) browser = "UC Browser";
   else if (/SamsungBrowser/i.test(ua)) browser = "Samsung Browser";
-  
+
   // Detect OS
   let os = "Unknown";
   if (/Windows/i.test(ua)) os = "Windows";
@@ -23,13 +26,15 @@ const parseUserAgent = (userAgent) => {
   else if (/Android/i.test(ua)) os = "Android";
   else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
   else if (/CrOS/i.test(ua)) os = "Chrome OS";
-  
+
   // Detect Device Type
   let deviceType = "Desktop";
-  if (/Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone|webOS/i.test(ua)) {
+  if (
+    /Mobile|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone|webOS/i.test(ua)
+  ) {
     deviceType = /iPad|Android(?!.*Mobile)/i.test(ua) ? "Tablet" : "Mobile";
   }
-  
+
   return { browser, os, deviceType };
 };
 
