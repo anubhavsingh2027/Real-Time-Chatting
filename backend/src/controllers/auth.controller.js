@@ -156,10 +156,24 @@ export const getUserActivityDetails = async (req, res) => {
           ? receiverName
           : senderName;
 
+      const istDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(message.createdAt);
+
+      const istTime = new Intl.DateTimeFormat("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(message.createdAt);
+
       return {
         name: contactName,
-        date: message.createdAt.toISOString().split("T")[0],
-        time: message.createdAt.toTimeString().slice(0, 5),
+        date: istDate,
+        time: istTime,
         message:
           message.text?.trim() || (message.image ? "[image]" : "[empty]"),
         sender: senderName,
