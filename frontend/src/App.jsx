@@ -6,6 +6,7 @@ import SettingsPage from "./pages/SettingsPage";
 import AutoLoginPage from "./pages/AutoLoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import RolePage from "./pages/RolePage";
+import ActivityDetailsPage from "./pages/ActivityDetailsPage";
 import { useAuthStore } from "./store/useAuthStore";
 import { useEffect, useState } from "react";
 import PageLoader from "./components/PageLoader";
@@ -55,6 +56,12 @@ function App() {
         <Route
           path="/settings"
           element={authUser ? <SettingsPage /> : <Navigate to={"/role"} />}
+        />
+        <Route
+          path="/details"
+          element={
+            authUser ? <ActivityDetailsPage /> : <Navigate to={"/role"} />
+          }
         />
         <Route
           path="/login"

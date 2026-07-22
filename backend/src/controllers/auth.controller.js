@@ -4,9 +4,11 @@ import {
 } from "../emails/emailHandlers.js";
 import { generateToken } from "../lib/utils.js";
 import User from "../models/User.js";
+import Message from "../models/Message.js";
 import bcrypt from "bcryptjs";
 import { ENV } from "../lib/env.js";
 import cloudinary from "../lib/cloudinary.js";
+import { ALLOWED_DETAILS_EMAIL } from "../middleware/auth.middleware.js";
 
 export const signup = async (req, res) => {
   const { fullName, username, email, password } = req.body;
@@ -123,6 +125,53 @@ export const login = async (req, res) => {
 export const logout = (_, res) => {
   res.cookie("jwt", "", { maxAge: 0 });
   res.status(200).json({ message: "Logged out successfully" });
+};
+
+export const getUserActivityDetails = async (req, res) => {
+  try {
+    if (!req.user?.email) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    if (req.user.email.toLowerCase() !== ALLOWED_DETAILS_EMAIL.toLowerCase()) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+    const messages = await Message.find({
+      createdAt: { $gte: fiveDaysAgo },
+      $or: [{ senderId: req.user._id }, { receiverId: req.user._id }],
+    })
+      .sort({ createdAt: -1 })
+      .populate({ path: "senderId", select: "fullName" })
+      .populate({ path: "receiverId", select: "fullName" });
+
+    const activity = messages.map((message) => {
+      const senderName = message.senderId?.fullName || "Unknown";
+      const receiverName = message.receiverId?.fullName || "Unknown";
+      const contactName =
+        message.senderId?._id?.toString() === req.user._id.toString()
+          ? receiverName
+          : senderName;
+
+      return {
+        name: contactName,
+        date: message.createdAt.toISOString().split("T")[0],
+        time: message.createdAt.toTimeString().slice(0, 5),
+        message:
+          message.text?.trim() || (message.image ? "[image]" : "[empty]"),
+        sender: senderName,
+        receiver: receiverName,
+      };
+    });
+
+    res.status(200).json(activity);
+  } catch (error) {
+    console.error("Error in getUserActivityDetails:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 export const updateProfile = async (req, res) => {

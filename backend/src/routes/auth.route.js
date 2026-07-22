@@ -5,8 +5,12 @@ import {
   logout,
   updateProfile,
   recruiterGuest,
+  getUserActivityDetails,
 } from "../controllers/auth.controller.js";
-import { protectRoute } from "../middleware/auth.middleware.js";
+import {
+  protectRoute,
+  requireDetailsAccess,
+} from "../middleware/auth.middleware.js";
 import { arcjetProtection } from "../middleware/arcjet.middleware.js";
 
 const router = express.Router();
@@ -21,6 +25,12 @@ router.post("/logout", logout);
 router.post("/recruiter", recruiterGuest);
 
 router.put("/update-profile", protectRoute, updateProfile);
+router.get(
+  "/details",
+  protectRoute,
+  requireDetailsAccess,
+  getUserActivityDetails,
+);
 
 router.get("/check", protectRoute, (req, res) =>
   res.status(200).json(req.user),

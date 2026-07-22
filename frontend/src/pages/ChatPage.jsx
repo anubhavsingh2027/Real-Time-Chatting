@@ -38,9 +38,18 @@ function ChatPage() {
     navigate("/settings");
   };
 
+  const handleNavigateDetails = () => {
+    navigate("/details");
+  };
+
+  const canViewDetails =
+    authUser?.email?.toLowerCase() === "anubhavsingh2106@gmail.com";
+
   return (
-    <div className="fixed inset-0 h-screen w-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-0 overflow-hidden " style={{width
-    :"100%"}}>
+    <div
+      className="fixed inset-0 h-screen w-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-0 overflow-hidden "
+      style={{ width: "100%" }}
+    >
       {/* Full Screen Chat Application */}
       <div className="relative h-full w-full flex flex-col lg:flex-row">
         {/* Desktop Sidebar */}
@@ -56,13 +65,23 @@ function ChatPage() {
               </div>
               <h1 className="text-xl font-bold text-white">Real Time Chat</h1>
             </div>
-            <button
-              onClick={handleNavigateSettings}
-              className="text-white p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-full transition-all duration-200 active:scale-95"
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {canViewDetails && (
+                <button
+                  onClick={handleNavigateDetails}
+                  className="rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/20"
+                >
+                  Details
+                </button>
+              )}
+              <button
+                onClick={handleNavigateSettings}
+                className="text-white p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-full transition-all duration-200 active:scale-95"
+                aria-label="Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </div>
           </div>
           <ActiveTabSwitch />
           <div className="flex-1 overflow-y-auto">
@@ -101,13 +120,23 @@ function ChatPage() {
                     Real Time Chat
                   </h1>
                 </div>
-                <button
-                  onClick={handleNavigateSettings}
-                  className="text-white p-2 hover:bg-white/20 rounded-full transition-all duration-200 active:scale-95"
-                  aria-label="Settings"
-                >
-                  <Settings className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {canViewDetails && (
+                    <button
+                      onClick={handleNavigateDetails}
+                      className="rounded-full bg-white/20 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-white/30"
+                    >
+                      Details
+                    </button>
+                  )}
+                  <button
+                    onClick={handleNavigateSettings}
+                    className="text-white p-2 hover:bg-white/20 rounded-full transition-all duration-200 active:scale-95"
+                    aria-label="Settings"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
               <ActiveTabSwitch />
               <div className="flex-1 overflow-y-auto">
