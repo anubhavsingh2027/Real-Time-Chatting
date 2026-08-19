@@ -40,6 +40,7 @@ const parseUserAgent = (userAgent) => {
 
 export const portfolioNewUser = async (req, res) => {
   const websiteName = req.params.websiteName;
+  const sourceName=req.query.source;
   try {
     // Extract client IP (supports proxies)
     const ip =
@@ -76,6 +77,7 @@ export const portfolioNewUser = async (req, res) => {
       <h3>Visitor Details:</h3>
       <p><b>IP Address:</b> ${ip}</p>
       <p><b>Browser:</b> ${browser}</p>
+      <p><b>Source :</b> ${sourceName ||" Direct"}</p>
       <p><b>Operating System:</b> ${os}</p>
       <p><b>Device Type:</b> ${deviceType}</p>
       <p><b>City:</b> ${ipDet.city || "N/A"}</p>
