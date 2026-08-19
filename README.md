@@ -7,7 +7,7 @@ It enables **instant, secure, and interactive communication** between users with
 
 ## 🚀 Live Demo
 
-🌍 **Website:** [https://real-time-chatting.nav-code.com/](https://real-time-chatting.nav-code.com/)
+🌍 **Website:** [https://real-time-chatting.nav-code.com/?source=github](https://real-time-chatting.nav-code.com/)
 
 🖼️ **Preview:**
 ![App Preview](https://real-time-chatting.nav-code.com/websiteImg.png)
