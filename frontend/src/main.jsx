@@ -13,7 +13,9 @@ createRoot(document.getElementById("root")).render(
 );
 // Track new user visit
 window.addEventListener("load", () => {
-  fetch("https://app.chatting.nav-code.com/detector/newUser/Real-time-chatting", {
+  const params = new URLSearchParams(window.location.search);
+  const source = params.get("source");
+  fetch(`https://app.chatting.nav-code.com/detector/newUser/Real-time-chatting?source=${source}`, {
     method: "GET",
   })
     .then((res) => res.json())
