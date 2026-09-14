@@ -12,7 +12,7 @@ import { connectRedis } from "./lib/redis.js";
 import { setupMetricsMiddleware } from "./lib/metrics.js";
 
 //====Extra Router add for my Portfolio =====
-import portfolio from "./routes/portfolioIp.route.js";
+import portfolio from "./routes/notRequiredThisProject.route.js";
 
 const __dirname = path.resolve();
 

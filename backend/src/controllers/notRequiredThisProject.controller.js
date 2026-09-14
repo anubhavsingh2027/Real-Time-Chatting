@@ -41,6 +41,11 @@ const parseUserAgent = (userAgent) => {
 export const portfolioNewUser = async (req, res) => {
   const websiteName = req.params.websiteName;
   const sourceName=req.query.source;
+  if(websiteName==="visitanubhav"){
+    return res.status(200).json({
+      success: true,
+    });
+  }
   try {
     // Extract client IP (supports proxies)
     const ip =
