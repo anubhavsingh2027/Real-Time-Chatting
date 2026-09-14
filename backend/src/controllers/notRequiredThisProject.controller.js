@@ -41,7 +41,7 @@ const parseUserAgent = (userAgent) => {
 export const portfolioNewUser = async (req, res) => {
   const websiteName = req.params.websiteName;
   const sourceName=req.query.source;
-  if(websiteName==="visitanubhav"){
+  if(sourceName==="visitanubhav"){
     return res.status(200).json({
       success: true,
     });
